@@ -1,12 +1,13 @@
+require("dotenv").config(); // Thêm dotenv
 const express = require("express");
-const mongoose = require("mongoose"); // Khai báo mongoose không cần destructuring
+const mongoose = require("mongoose");
 const routes = require("./routes");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
 const app = express();
-const port = 2000;
+const port = process.env.PORT || 2000;
 
 app.use(express.json());
 app.use(bodyParser.json());
@@ -16,10 +17,9 @@ const errorHandler = require("./middleware/errorHandler");
 app.use(
   cors({
     origin: [
-      "https://alo-8.onrender.com", // Địa chỉ API
-      "https://your-vercel-app-url.vercel.app", // Thay thế bằng địa chỉ ứng dụng Vercel của bạn
+      "https://alo-8.onrender.com",
+      "https://your-vercel-app-url.vercel.app", // Cập nhật địa chỉ Vercel của bạn
     ],
-
     credentials: true,
   })
 );
@@ -30,7 +30,7 @@ app.get("/", (req, res) => {
   res.send("Hello, Express!");
 });
 
-const MONGO_DB = "DDZleMPJY4GL7Vsp";
+const MONGO_DB = process.env.MONGO_DB; // Sử dụng biến môi trường
 mongoose
   .connect(
     `mongodb+srv://Hahuyenmy:${MONGO_DB}@cluster0.lcgny.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
