@@ -14,15 +14,8 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 const errorHandler = require("./middleware/errorHandler");
 
-app.use(
-  cors({
-    origin: [
-      "https://alo-8.onrender.com",
-      "https://front-end-4zla.vercel.app/", // Cập nhật địa chỉ Vercel của bạn
-    ],
-    credentials: true,
-  })
-);
+app.use(cors());
+
 app.use(errorHandler);
 routes(app);
 
