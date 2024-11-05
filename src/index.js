@@ -15,7 +15,11 @@ const errorHandler = require("./middleware/errorHandler");
 
 app.use(
   cors({
-    origin: "https://alo-8.onrender.com",
+    origin: [
+      "https://alo-8.onrender.com", // Địa chỉ API
+      "https://your-vercel-app-url.vercel.app", // Thay thế bằng địa chỉ ứng dụng Vercel của bạn
+    ],
+
     credentials: true,
   })
 );
