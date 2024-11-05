@@ -15,7 +15,7 @@ const errorHandler = require("./middleware/errorHandler");
 
 app.use(
   cors({
-    origin: "http://localhost:7000",
+    origin: "https://alo-8.onrender.com",
     credentials: true,
   })
 );
