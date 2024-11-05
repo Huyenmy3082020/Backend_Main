@@ -18,7 +18,7 @@ app.use(
   cors({
     origin: [
       "https://alo-8.onrender.com",
-      "https://your-vercel-app-url.vercel.app", // Cập nhật địa chỉ Vercel của bạn
+      "https://front-end-4zla.vercel.app/", // Cập nhật địa chỉ Vercel của bạn
     ],
     credentials: true,
   })
