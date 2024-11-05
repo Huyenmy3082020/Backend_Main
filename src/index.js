@@ -33,7 +33,6 @@ mongoose
     console.log(err);
   });
 
-// Bắt đầu server
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });
