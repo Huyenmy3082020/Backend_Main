@@ -1,6 +1,7 @@
 const User = require("../models/UserModel");
 const Jwtservice = require("../../src/service/JwtService");
-const bcrypt = require("bcrypt");
+const bcrypt = require("bcryptjs");
+
 const {
   generralAccesToken,
   generralRefreshToken,
