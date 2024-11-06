@@ -15,7 +15,7 @@ const errorHandler = require("./middleware/errorHandler");
 
 app.use(
   cors({
-    origin: "http://localhost:7000", // Chỉ cho phép frontend từ localhost:7000
+    origin: "http://localhost:3000", // Chỉ cho phép frontend từ localhost:7000
     credentials: true, // Cho phép gửi cookie/credentials
   })
 );
