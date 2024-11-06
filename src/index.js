@@ -13,7 +13,12 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 const errorHandler = require("./middleware/errorHandler");
 
-app.use(cors());
+app.use(
+  cors({
+    origin: "http://localhost:7000", // Chỉ cho phép frontend từ localhost:7000
+    credentials: true, // Cho phép gửi cookie/credentials
+  })
+);
 app.use(errorHandler);
 routes(app);
 
