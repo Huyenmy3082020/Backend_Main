@@ -1,5 +1,7 @@
 const User = require("../models/UserModel");
 const Jwtservice = require("../../src/service/JwtService");
+const redisClient = require("../connect/redis");
+
 const bcrypt = require("bcryptjs");
 
 const {
@@ -10,28 +12,27 @@ const {
 require("dotenv").config();
 
 const createUser = async (newUser) => {
-  const { name, email, password } = newUser;
+  const { email, password } = newUser;
+
+  
   try {
     const checkUser = await User.findOne({ email });
-
     if (checkUser) {
       return {
         status: "err",
-        mess: "The email is already registered",
+        message: "Email đã được đăng ký",
       };
     }
 
-    const hash = bcrypt.hashSync(password, 10);
-
+    const hashedPassword = bcrypt.hashSync(password, 10);
     const createdUser = await User.create({
-      name,
       email,
-      password: hash,
+      password: hashedPassword,
     });
 
     return {
       status: "ok",
-      mess: "User created successfully",
+      message: "Tạo người dùng thành công",
       data: createdUser,
     };
   } catch (error) {
@@ -59,8 +60,6 @@ const loginUser = async (userLogin) => {
         message: "Mật khẩu hoặc người dùng không đúng",
       };
     }
-
-    // Tạo access token và refresh token
     const accessToken = await generralAccesToken({
       id: checkUser.id,
       isAdmin: checkUser.isAdmin,
@@ -88,13 +87,23 @@ const updateUser = async (id, data) => {
       const checkUser = await User.findById(id);
 
       if (!checkUser) {
-        return {
+        return resolve({
           status: "err",
           mess: "User not found",
-        };
+        });
       }
 
       const updatedUser = await User.findByIdAndUpdate(id, data, { new: true });
+
+      await redisClient.del(`user:${id}`);
+
+      await redisClient.set(
+        `user:${id}`,
+        JSON.stringify(updatedUser),
+        "EX",
+        3600
+      );
+
       resolve({
         status: "ok",
         mess: "User updated successfully",
@@ -142,12 +151,29 @@ const getAll = async () => {
   });
 };
 
-const getAllUserbyId = async (id) => {
+const getAllUserbyId = async (userId) => {
   try {
-    const UserbyId = await User.findById(id); // Sử dụng findById thay vì find
-    return { data: UserbyId }; // Trả về dữ liệu dưới dạng đối tượng
+    const cacheData = await redisClient.get(`user:${userId}`);
+    if (cacheData) {
+      console.log("Lấy dữ liệu từ Redis");
+      return { data: JSON.parse(cacheData) };
+    }
+    const userData = await User.findById(userId);
+    if (!userData) {
+      return { error: "Người dùng không tồn tại" };
+    }
+
+    await redisClient.set(
+      `user:${userId}`,
+      JSON.stringify(userData),
+      "EX",
+      3600
+    );
+
+    console.log("Lấy dữ liệu từ MongoDB và lưu vào Redis");
+    return { data: userData };
   } catch (error) {
-    throw new Error(error.message); // Ném lỗi để hàm gọi bên ngoài xử lý
+    throw new Error(error.message);
   }
 };
 

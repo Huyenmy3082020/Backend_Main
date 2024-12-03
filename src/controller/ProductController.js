@@ -1,43 +1,17 @@
 const Product = require("../models/ProductModel");
-const Cart = require("../models/CartModel");
 
 const ProductService = require("../service/Productservice");
 
 const createProduct = async (req, res) => {
   try {
-    const {
-      name,
-      image,
-      type,
-      price,
-      countInStock,
-      rating,
-      description,
-      discount,
-      selled,
-    } = req.body;
-
-    if (
-      !name ||
-      !image ||
-      !type ||
-      !price ||
-      !countInStock ||
-      !rating ||
-      !description ||
-      !discount ||
-      !selled
-    ) {
-      return res.status(400).json({
-        status: "err",
-        error: "Tất cả các trường là bắt buộc",
-      });
+    const result = await ProductService.createProduct(req);
+    if (result.status === "ok") {
+      return res.status(200).json(result);
+    } else {
+      return res.status(400).json(result);
     }
-
-    const result = await ProductService.createProduct(req.body);
-    return res.status(200).json(result);
   } catch (error) {
-    return res.status(200).json({
+    return res.status(500).json({
       status: "err",
       error: error.message,
     });
@@ -242,6 +216,32 @@ const search = async (req, res) => {
   }
 };
 
+const productWithCategory = async (req, res) => {
+  try {
+    const id = req.params.id;
+    const filter = req.query.filter;
+    const sortPrice = req.query.sort;
+
+    console.log(sortPrice);
+
+    const products = await ProductService.getAllProductsWithCategory(
+      id,
+      filter,
+      sortPrice
+    );
+
+    res.status(200).json({
+      status: "success",
+      data: products,
+    });
+  } catch (error) {
+    res.status(500).json({
+      status: "error",
+      message: error.message,
+    });
+  }
+};
+
 module.exports = {
   createProduct,
   getProduct,
@@ -250,6 +250,7 @@ module.exports = {
   getProductbyId,
   getProductTrash,
   restoreProductController,
+  productWithCategory,
   destroyProduct,
   deleteMany,
   getProductType,

@@ -1,26 +1,33 @@
 const mongoose = require("mongoose");
 
-const cartItemSchema = new mongoose.Schema({
-  product: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: "Product",
-    required: true,
-  }, // ID của sản phẩm
-  name: { type: String, required: true }, // Tên sản phẩm
-  amount: { type: Number, required: true, min: 1 }, // Số lượng sản phẩm
-  price: { type: Number, required: true }, // Giá sản phẩm
-  image: { type: String, required: true }, // Hình ảnh sản phẩm
-  discount: { type: Number, default: 0 }, // Giảm giá (nếu có)
-});
+const mongooseDelete = require("mongoose-delete");
+const cartSchema = new mongoose.Schema(
+  {
+    userId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "User",
+      required: true,
+    },
+    items: [
+      {
+        productId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Product",
+          required: true,
+        },
+        quantity: { type: Number, required: true },
+        status: { type: String, default: "pending" },
+      },
+    ],
+    shippingId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Shipping",
+    },
+  },
 
-const cartSchema = new mongoose.Schema({
-  user: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true }, // ID của người dùng
-  items: [cartItemSchema], // Danh sách các sản phẩm trong giỏ hàng
-  totalPrice: { type: Number, default: 0 }, // Tổng giá trị của giỏ hàng
-  createdAt: { type: Date, default: Date.now }, // Thời gian tạo giỏ hàng
-  updatedAt: { type: Date, default: Date.now }, // Thời gian cập nhật giỏ hàng
-});
+  { timestamps: true }
+);
 
-const Cart = mongoose.model("Cart", cartSchema);
+cartSchema.plugin(mongooseDelete, { deletedAt: true, overrideMethods: "all" });
 
-module.exports = Cart;
+module.exports = mongoose.model("Cart", cartSchema);

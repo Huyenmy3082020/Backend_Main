@@ -15,5 +15,6 @@ router.delete("/deleteMany", ProductController.deleteMany);
 router.get("/product/:type", ProductController.getProductType);
 router.get("/getAllType", ProductController.getAllType);
 router.get("/search", ProductController.search);
+router.get("/productWithCategory/:id", ProductController.productWithCategory);
 
 module.exports = router;

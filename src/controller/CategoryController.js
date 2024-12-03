@@ -5,7 +5,6 @@ const CategoryService = require("../service/CategoryService");
 const createCategory = async (req, res) => {
   try {
     const { name, image } = req.body;
-
     const categoryData = {
       name,
       image,
@@ -23,7 +22,7 @@ const createCategory = async (req, res) => {
   }
 };
 
-const getOrder = async (req, res) => {
+const getAllCategory = async (req, res) => {
   try {
     const response = await CategoryService.getAllCategories();
     return res.status(200).json(response);
@@ -55,11 +54,11 @@ const getCategoryByname = async (req, res) => {
     });
   }
 };
-const getCategoryByslug = async (req, res) => {
+const getCategoryByid = async (req, res) => {
   try {
-    const slug = req.params.slug;
+    const id = req.params.id;
 
-    const response = await CategoryService.getCategoryBySlug(slug);
+    const response = await CategoryService.getCategoryById(id);
 
     if (!response) {
       return res.status(404).json({
@@ -79,7 +78,7 @@ const getCategoryByslug = async (req, res) => {
 
 module.exports = {
   createCategory,
-  getOrder,
+  getAllCategory,
   getCategoryByname,
-  getCategoryByslug,
+  getCategoryByid,
 };

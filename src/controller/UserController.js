@@ -3,39 +3,53 @@ const UserService = require("../service/UserService");
 
 require("dotenv").config();
 const Jwtservice = require("../service/JwtService");
-
 const createUser = async (req, res) => {
   try {
     const { email, password, confirmPassword } = req.body;
-    const reg = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,16}$/;
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[\W_])(?=.*[a-zA-Z\d]).{6,}$/;
-    const isCheckpassword = passwordRegex.test(password);
-    const isCheckEmail = reg.test(email);
 
+    console.log(email, password, confirmPassword);
+
+    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,16}$/;
+    const passwordRegex = /^(?=.*[A-Z])(?=.*[\W_])(?=.*[a-zA-Z\d]).{6,}$/;
+
+    // Kiểm tra xem có trường nào bị bỏ trống không
     if (!email || !password || !confirmPassword) {
       return res.status(400).json({
         status: "err",
         message: "Không được bỏ trống trường nào",
       });
-    } else if (!isCheckEmail) {
+    }
+
+    // Kiểm tra định dạng email
+    const isEmailValid = emailRegex.test(email);
+    if (!isEmailValid) {
       return res.status(400).json({
         status: "err",
         message: "Vui lòng điền đúng định dạng email",
       });
-    } else if (password !== confirmPassword) {
+    }
+
+    // Kiểm tra mật khẩu có khớp không
+    if (password !== confirmPassword) {
       return res.status(400).json({
         status: "err",
-        message: "Sai nhập lại mật khẩu",
-      });
-    } else if (!isCheckpassword) {
-      return res.status(400).json({
-        status: "err",
-        message: "Mật khẩu phải có viết hoa và kí tự đặc biệt",
+        message: "Mật khẩu và xác nhận mật khẩu không khớp",
       });
     }
 
+    // Kiểm tra mật khẩu có đúng định dạng không
+    const isPasswordValid = passwordRegex.test(password);
+    if (!isPasswordValid) {
+      return res.status(400).json({
+        status: "err",
+        message: "Mật khẩu phải có chữ cái viết hoa và ký tự đặc biệt",
+      });
+    }
+
+    // Gọi dịch vụ để tạo người dùng mới
     const response = await UserService.createUser(req.body);
-    return res.status(201).json(response);
+
+    return res.status(201).json(response); // Trả về thông tin người dùng sau khi tạo thành công
   } catch (error) {
     return res.status(500).json({
       status: "err",
@@ -139,6 +153,7 @@ const getAll = async (req, res) => {
 const getAllUserbyId = async (req, res) => {
   try {
     const id = req.params.id;
+
     const response = await UserService.getAllUserbyId(id);
     if (response.data) {
       return res.status(200).json(response);

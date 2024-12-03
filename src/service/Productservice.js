@@ -1,35 +1,62 @@
 const Product = require("../models/ProductModel");
 const Cart = require("../models/CartModel");
+const Category = require("../models/CategoryModel");
 
-const createProduct = async (newProduct) => {
+const createProduct = async (req) => {
   try {
     const {
+      category,
       name,
       image,
-      type,
       price,
       countInStock,
       rating,
       description,
-      selled,
       discount,
-    } = newProduct;
+      selled,
+    } = req.body;
 
-    const createdProduct = await Product.create({
+    if (
+      !name ||
+      !image ||
+      !price ||
+      !countInStock ||
+      !rating ||
+      !description ||
+      !discount ||
+      !selled
+    ) {
+      return {
+        status: "err",
+        message: "Tất cả các trường là bắt buộc",
+      };
+    }
+
+    const category1 = await Category.findById(category);
+    if (!category1) {
+      return {
+        status: "err",
+        message: "Danh mục không hợp lệ.",
+      };
+    }
+
+    const newProduct = new Product({
       name,
       image,
-      type,
       price,
       countInStock,
       rating,
       description,
-      selled,
       discount,
+      selled,
+      category: category1._id,
     });
+
+    await newProduct.save();
 
     return {
       status: "ok",
-      data: createdProduct,
+      data: newProduct,
     };
   } catch (error) {
     return {
@@ -78,6 +105,10 @@ const getProduct = async (limit, page, sort, filter) => {
       }
 
       const allProduct = await Product.find()
+        .select(
+          "name image price countInStock rating discount selled description category"
+        )
+        .populate("category", "name image")
         .limit(limit)
         .skip(page * limit);
       resolve({
@@ -221,7 +252,6 @@ const getAllType = async () => {
 
 const restoreProduct = async (data) => {
   try {
-    // Giả sử `Product.restore` nhận cả id và data để khôi phục sản phẩm
     await Product.restore(data);
 
     return {
@@ -241,8 +271,63 @@ const search = async (data) => {
   } catch (error) {}
 };
 
+const getAllProductsWithCategory = async (id, filter, sortPrice) => {
+  try {
+    const query = { category: id };
+
+    if (filter) {
+      switch (filter) {
+        case "newest": // Mới nhất
+          return await Product.find(query)
+            .sort({ createdAt: -1 })
+            .select(
+              "name image price countInStock rating discount selled description category"
+            )
+            .populate("category", "name image");
+
+        case "bestseller":
+          return await Product.find(query)
+            .sort({ selled: -1 })
+            .select(
+              "name image price countInStock rating discount selled description category"
+            )
+            .populate("category", "name image");
+
+        case "price": // Theo giá
+          const sortOrder =
+            sortPrice === "priceASC" ? { price: 1 } : { price: -1 };
+          return await Product.find(query)
+            .sort(sortOrder) // Áp dụng sortOrder cho việc sắp xếp giá
+            .select(
+              "name image price countInStock rating discount selled description category"
+            )
+            .populate("category", "name image");
+
+        default:
+          return await Product.find(query)
+            .select(
+              "name image price countInStock rating discount selled description category"
+            )
+            .populate("category", "name image");
+      }
+    } else {
+      // Nếu không có filter thì trả về tất cả sản phẩm trong danh mục
+      return await Product.find(query)
+        .select(
+          "name image price countInStock rating discount selled description category"
+        )
+        .populate("category", "name image");
+    }
+  } catch (error) {
+    throw new Error(
+      "Error fetching products with categories: " + error.message
+    );
+  }
+};
+
 module.exports = {
   createProduct,
+  getAllProductsWithCategory,
   getProduct,
   updateProduct,
   deleteProduct,

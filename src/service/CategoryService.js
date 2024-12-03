@@ -7,11 +7,23 @@ const createCategory = async (categoryData) => {
 };
 
 const getAllCategories = async () => {
-  return await Category.find();
+  try {
+    return await Category.find().select("name image");
+  } catch (error) {
+    throw new Error(error.message); // Ném lại lỗi để xử lý ở nơi khác
+  }
 };
 
 const getCategoryById = async (id) => {
-  return await Category.findById(id);
+  const category = await Category.findById(id).populate({
+    path: "products", // Đường dẫn liên kết
+  });
+
+  if (!category) {
+    throw new Error("Category not found");
+  }
+
+  return category;
 };
 
 const getCategoryByName = async (name) => {
@@ -20,12 +32,12 @@ const getCategoryByName = async (name) => {
     return category;
   } catch (err) {
     console.error("Error fetching category by name:", err);
-    throw err; // Ném lỗi ra ngoài để xử lý
+    throw err;
   }
 };
-const getCategoryBySlug = async (slug) => {
+const getCategoryBySlug = async (id) => {
   try {
-    const category = await Category.findOne({ slug });
+    const category = await Category.findOne({ id });
     if (!category) {
       throw new Error("Category not found");
     }

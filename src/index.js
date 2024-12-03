@@ -1,5 +1,6 @@
 const express = require("express");
 const mongoose = require("mongoose"); // Khai báo mongoose không cần destructuring
+
 const routes = require("./routes");
 const bodyParser = require("body-parser");
 const cookieParser = require("cookie-parser");
@@ -15,8 +16,8 @@ const errorHandler = require("./middleware/errorHandler");
 
 app.use(
   cors({
-    origin: ["https://front-end-4zla.vercel.app", "http://localhost:3000/"], // Chỉ cho phép frontend từ localhost:7000
-    credentials: true, // Cho phép gửi cookie/credentials
+    origin: "http://localhost:7000",
+    credentials: true,
   })
 );
 app.use(errorHandler);
@@ -38,6 +39,7 @@ mongoose
     console.log(err);
   });
 
+// Bắt đầu server
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });

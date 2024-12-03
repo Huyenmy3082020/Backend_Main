@@ -1,92 +1,90 @@
 const Order = require("../models/OrderModel");
 const Product = require("../models/ProductModel");
+const Cart = require("../models/CartModel");
 
 const createOrder = async (newProduct) => {
-  const {
-    orderItems,
-    payment,
-    itemPrices,
-    city,
-    phone,
-    name,
-    shippingPrice,
-    address,
-    totalPrice,
-    user,
-  } = newProduct;
+  const { orderItems, payment, shippingPrice, totalPrice, user } = newProduct;
 
   const errorDetails = [];
 
   try {
-    // Kiểm tra phương thức thanh toán và cập nhật trạng thái `isPaid` cho đơn hàng
-    let isPaid = false;
-    if (payment === "Thanh toán bằng VNPay") {
-      isPaid = true;
-    }
-
-    // Tạo đơn hàng trước, sau đó mới cập nhật số lượng sản phẩm
+    // Tạo đơn hàng
     const createdOrder = await Order.create({
       orderItems,
       payment,
-      itemPrices,
-      city,
-      phone,
-      name,
       shippingPrice,
-      address,
       totalPrice,
       user,
-      isPaid, // Cập nhật trạng thái thanh toán
     });
 
-    // Cập nhật số lượng tồn kho sản phẩm cho từng sản phẩm trong đơn hàng
-    await Promise.all(
-      orderItems.map(async (order) => {
-        try {
-          const product = await Product.findOneAndUpdate(
-            {
-              _id: order.product, // ID của sản phẩm
-              countInStock: { $gte: order.amount }, // Kiểm tra tồn kho
+    const orderIds = createdOrder._id;
+
+    // Cập nhật số lượng tồn kho sản phẩm
+    for (const order of orderItems) {
+      try {
+        const product = await Product.findOneAndUpdate(
+          {
+            _id: order.productId, // ID của sản phẩm
+            countInStock: { $gte: order.quantity }, // Kiểm tra tồn kho
+          },
+          {
+            $inc: {
+              countInStock: -order.quantity, // Giảm tồn kho
+              selled: +order.quantity, // Tăng số lượng bán
             },
-            {
-              $inc: {
-                countInStock: -order.amount, // Giảm tồn kho
-                selled: +order.amount, // Tăng số lượng bán
-              },
-            },
-            { new: true }
+          },
+          { new: true }
+        );
+
+        if (!product) {
+          throw new Error(
+            `Sản phẩm với ID ${order.productId} không đủ số lượng tồn kho hoặc không tồn tại.`
           );
-
-          if (!product) {
-            throw new Error(
-              `Sản phẩm với ID ${order.product} không đủ số lượng tồn kho hoặc không tồn tại.`
-            );
-          }
-
-          return product;
-        } catch (error) {
-          errorDetails.push({
-            productId: order.product,
-            message:
-              error.message ||
-              "Đã xảy ra lỗi trong quá trình cập nhật sản phẩm.",
-          });
         }
-      })
-    );
-
-    // Kiểm tra nếu có lỗi nào trong quá trình cập nhật sản phẩm
-    if (errorDetails.length > 0) {
-      throw new Error(
-        "Có lỗi xảy ra trong quá trình cập nhật sản phẩm. Chi tiết: " +
-          JSON.stringify(errorDetails)
-      );
+      } catch (error) {
+        errorDetails.push({
+          productId: order.productId,
+          message:
+            error.message || "Đã xảy ra lỗi trong quá trình cập nhật sản phẩm.",
+        });
+      }
     }
 
-    // Nếu tất cả sản phẩm được cập nhật thành công
+    // Kiểm tra nếu có lỗi trong quá trình cập nhật sản phẩm
+    if (errorDetails.length > 0) {
+      return {
+        status: "err",
+        message:
+          "Có lỗi xảy ra trong quá trình cập nhật sản phẩm. Chi tiết: " +
+          JSON.stringify(errorDetails),
+        details: errorDetails,
+      };
+    }
+
+    // Cập nhật giỏ hàng, đánh dấu sản phẩm đã mua
+    await Cart.updateOne(
+      { userId: user },
+      {
+        $set: {
+          "items.$[item].status": "purchased",
+        },
+      },
+      {
+        arrayFilters: [
+          {
+            "item.productId": { $in: orderItems.map((item) => item.productId) },
+          },
+        ],
+      }
+    );
+
+    // Trả về thông tin đơn hàng, bao gồm orderId
     return {
       status: "ok",
-      data: createdOrder,
+      data: {
+        orderId: orderIds,
+        createdOrder,
+      },
     };
   } catch (error) {
     console.log("Error creating order:", error);
@@ -95,7 +93,7 @@ const createOrder = async (newProduct) => {
       status: "err",
       message: error.message || "Đã xảy ra lỗi không xác định.",
       code: error.status || 500,
-      details: errorDetails.length > 0 ? errorDetails : undefined, // Trả về chi tiết lỗi
+      details: errorDetails.length > 0 ? errorDetails : undefined,
     };
   }
 };
