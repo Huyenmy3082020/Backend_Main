@@ -222,8 +222,6 @@ const productWithCategory = async (req, res) => {
     const filter = req.query.filter;
     const sortPrice = req.query.sort;
 
-    console.log(sortPrice);
-
     const products = await ProductService.getAllProductsWithCategory(
       id,
       filter,

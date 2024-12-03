@@ -7,8 +7,6 @@ const createUser = async (req, res) => {
   try {
     const { email, password, confirmPassword } = req.body;
 
-    console.log(email, password, confirmPassword);
-
     const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,16}$/;
     const passwordRegex = /^(?=.*[A-Z])(?=.*[\W_])(?=.*[a-zA-Z\d]).{6,}$/;
 

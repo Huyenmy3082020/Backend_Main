@@ -14,7 +14,6 @@ require("dotenv").config();
 const createUser = async (newUser) => {
   const { email, password } = newUser;
 
-  
   try {
     const checkUser = await User.findOne({ email });
     if (checkUser) {
@@ -155,7 +154,6 @@ const getAllUserbyId = async (userId) => {
   try {
     const cacheData = await redisClient.get(`user:${userId}`);
     if (cacheData) {
-      console.log("Lấy dữ liệu từ Redis");
       return { data: JSON.parse(cacheData) };
     }
     const userData = await User.findById(userId);
@@ -170,7 +168,6 @@ const getAllUserbyId = async (userId) => {
       3600
     );
 
-    console.log("Lấy dữ liệu từ MongoDB và lưu vào Redis");
     return { data: userData };
   } catch (error) {
     throw new Error(error.message);

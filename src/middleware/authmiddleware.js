@@ -48,7 +48,6 @@ const authUserMiddleware = (req, res, next) => {
   }
 
   const token = authHeader.split(" ")[1];
-  console.log(userId, token);
   if (!token) {
     return res.status(401).json({
       mess: "Token xác thực không hợp lệ",
@@ -58,14 +57,11 @@ const authUserMiddleware = (req, res, next) => {
 
   jwt.verify(token, process.env.ACCESS_TOKEN, (err, user) => {
     if (err) {
-      console.log(err);
       return res.status(403).json({
         mess: "Token xác thực không hợp lệ ưdwewd",
         status: "ERROR",
       });
     }
-    console.log(user);
-    console.log(user.id);
     if (user?.id === userId) {
       next();
     } else {
