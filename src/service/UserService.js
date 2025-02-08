@@ -1,6 +1,5 @@
 const User = require("../models/UserModel");
 const Jwtservice = require("../../src/service/JwtService");
-const redisClient = require("../connect/redis");
 
 const bcrypt = require("bcryptjs");
 
@@ -51,7 +50,6 @@ const loginUser = async (userLogin) => {
       };
     }
 
-    // Kiểm tra mật khẩu
     const comparePassword = bcrypt.compareSync(password, checkUser.password);
     if (!comparePassword) {
       return {
@@ -59,6 +57,8 @@ const loginUser = async (userLogin) => {
         message: "Mật khẩu hoặc người dùng không đúng",
       };
     }
+
+    // Tạo access token và refresh token
     const accessToken = await generralAccesToken({
       id: checkUser.id,
       isAdmin: checkUser.isAdmin,
@@ -76,13 +76,14 @@ const loginUser = async (userLogin) => {
       refreshToken,
     };
   } catch (error) {
-    throw error;
+    throw error; // Đảm bảo có log lỗi trong catch
   }
 };
 
 const updateUser = async (id, data) => {
   return new Promise(async (resolve, reject) => {
     try {
+      console.log(id, data);
       const checkUser = await User.findById(id);
 
       if (!checkUser) {
@@ -93,15 +94,6 @@ const updateUser = async (id, data) => {
       }
 
       const updatedUser = await User.findByIdAndUpdate(id, data, { new: true });
-
-      await redisClient.del(`user:${id}`);
-
-      await redisClient.set(
-        `user:${id}`,
-        JSON.stringify(updatedUser),
-        "EX",
-        3600
-      );
 
       resolve({
         status: "ok",
@@ -152,21 +144,10 @@ const getAll = async () => {
 
 const getAllUserbyId = async (userId) => {
   try {
-    const cacheData = await redisClient.get(`user:${userId}`);
-    if (cacheData) {
-      return { data: JSON.parse(cacheData) };
-    }
     const userData = await User.findById(userId);
     if (!userData) {
       return { error: "Người dùng không tồn tại" };
     }
-
-    await redisClient.set(
-      `user:${userId}`,
-      JSON.stringify(userData),
-      "EX",
-      3600
-    );
 
     return { data: userData };
   } catch (error) {
