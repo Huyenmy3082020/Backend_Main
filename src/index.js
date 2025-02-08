@@ -26,17 +26,15 @@ routes(app);
 app.get("/", (req, res) => {
   res.send("Hello, Express!");
 });
-
-const MONGO_DB = "DDZleMPJY4GL7Vsp";
 mongoose
   .connect(
-    `mongodb+srv://Hahuyenmy:${MONGO_DB}@cluster0.lcgny.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`
+    `mongodb+srv://hatuan:Hatuan12345%40@cluster0.eocii.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0`
   )
   .then(() => {
-    console.log("Success !!");
+    console.log("✅ Kết nối MongoDB thành công!");
   })
   .catch((err) => {
-    console.log(err);
+    console.error("❌ Lỗi kết nối MongoDB:", err);
   });
 
 // Bắt đầu server
