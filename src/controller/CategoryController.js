@@ -1,84 +1,95 @@
-// controllers/CategoryController.js
+const categoryService = require("../service/CategoryService");
 
-const CategoryService = require("../service/CategoryService");
-
-const createCategory = async (req, res) => {
+// 🟢 Thêm mới Category
+exports.createCategory = async (req, res) => {
   try {
-    const { name, image } = req.body;
-    const categoryData = {
-      name,
-      image,
-    };
-    const result = await CategoryService.createCategory(categoryData);
-    return res.status(201).json({
-      status: "success",
-      data: result,
+    const newCategory = await categoryService.createCategory(req.body);
+    res.status(201).json({
+      success: true,
+      message: "Thêm thành công!",
+      category: newCategory,
     });
   } catch (error) {
-    return res.status(500).json({
-      status: "err",
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi thêm danh mục!",
       error: error.message,
     });
   }
 };
 
-const getAllCategory = async (req, res) => {
+// 🔵 Lấy danh sách tất cả Categories
+exports.getAllCategories = async (req, res) => {
   try {
-    const response = await CategoryService.getAllCategories();
-    return res.status(200).json(response);
+    const categories = await categoryService.getAllCategories();
+    res.status(200).json({ success: true, categories });
   } catch (error) {
-    return res.status(404).json({
-      message: error,
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy danh sách!",
+      error: error.message,
     });
   }
 };
 
-const getCategoryByname = async (req, res) => {
+// 🟡 Lấy một Category theo ID
+exports.getCategoryById = async (req, res) => {
   try {
-    const name = req.params.name; // Lấy tên từ params
-    console.log("Category name:", name);
-    const response = await CategoryService.getCategoryByName(name);
+    const category = await categoryService.getCategoryById(req.params.id);
+    if (!category)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy danh mục!" });
 
-    if (!response) {
-      return res.status(404).json({
-        status: "err",
-        message: "Category not found",
-      });
-    }
-
-    return res.status(200).json(response);
+    res.status(200).json({ success: true, category });
   } catch (error) {
-    return res.status(500).json({
-      status: "err",
-      message: error.message,
-    });
-  }
-};
-const getCategoryByid = async (req, res) => {
-  try {
-    const id = req.params.id;
-
-    const response = await CategoryService.getCategoryById(id);
-
-    if (!response) {
-      return res.status(404).json({
-        status: "err",
-        message: "Category not found",
-      });
-    }
-
-    return res.status(200).json(response);
-  } catch (error) {
-    return res.status(500).json({
-      status: "err",
-      message: error.message,
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi lấy dữ liệu!",
+      error: error.message,
     });
   }
 };
 
-module.exports = {
-  createCategory,
-  getAllCategory,
-  getCategoryByname,
-  getCategoryByid,
+// 🟠 Cập nhật Category
+exports.updateCategory = async (req, res) => {
+  try {
+    const updatedCategory = await categoryService.updateCategory(
+      req.params.id,
+      req.body
+    );
+    if (!updatedCategory)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy danh mục!" });
+
+    res.status(200).json({
+      success: true,
+      message: "Cập nhật thành công!",
+      category: updatedCategory,
+    });
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi cập nhật!",
+      error: error.message,
+    });
+  }
+};
+
+// 🔴 Xóa Category
+exports.deleteCategory = async (req, res) => {
+  try {
+    const deletedCategory = await categoryService.deleteCategory(req.params.id);
+    if (!deletedCategory)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy danh mục!" });
+
+    res.status(200).json({ success: true, message: "Xóa thành công!" });
+  } catch (error) {
+    res
+      .status(500)
+      .json({ success: false, message: "Lỗi khi xóa!", error: error.message });
+  }
 };

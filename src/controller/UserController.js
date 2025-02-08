@@ -70,13 +70,23 @@ const loginUserController = async (req, res) => {
     } else if (!isCheckEmail) {
       return res.status(400).json({
         status: "ERR",
-        message: "The input is email",
+        message: "Vui lòng nhập đúng email",
       });
     }
 
     const response = await UserService.loginUser({ email, password });
+
+    // Kiểm tra nếu có lỗi trong response
+    if (response.status === "ERR") {
+      return res.status(400).json({
+        status: "ERR",
+        message: response.message,
+      });
+    }
+
     const { refreshToken, ...data } = response;
 
+    // Gửi refresh token qua cookie
     res.cookie("refresh_token", refreshToken, {
       httpOnly: true,
       secure: false,
@@ -89,6 +99,7 @@ const loginUserController = async (req, res) => {
       refreshToken,
     });
   } catch (error) {
+    console.error(error);
     return res.status(500).json({
       status: "ERR",
       message: "Internal Server Error",
