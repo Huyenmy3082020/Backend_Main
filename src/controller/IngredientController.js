@@ -1,15 +1,45 @@
 const IngredientService = require("../service/InService");
+const { findCategoryByName } = require("./repository/categoryRepository");
+const { findSupplierByName } = require("./repository/supplierRepository");
 
 // 🟢 Thêm mới Ingredient
 exports.createIngredient = async (req, res) => {
   try {
-    const newIngredient = await IngredientService.createIngredient(req.body);
+    const { category, supplier, name, price, description } = req.body;
+
+    // Tìm Category & Supplier từ database
+    const categoryObj = await findCategoryByName(category);
+    const supplierObj = await findSupplierByName(supplier);
+
+    if (!categoryObj || !supplierObj) {
+      return res.status(400).json({
+        success: false,
+        message: "Không tìm thấy danh mục hoặc nhà cung cấp!",
+      });
+    }
+
+    // Lấy _id dưới dạng string
+    const categoryId = categoryObj._id.toString();
+    const supplierId = supplierObj._id.toString();
+
+    console.log("Category ID:", categoryId, "Supplier ID:", supplierId);
+
+    // Gọi service để tạo nguyên liệu
+    const newIngredient = await IngredientService.createIngredient({
+      categoryId,
+      supplierId,
+      name,
+      price,
+      description,
+    });
+
     res.status(201).json({
       success: true,
       message: "Thêm thành công!",
       ingredient: newIngredient,
     });
   } catch (error) {
+    console.error("Lỗi:", error);
     res.status(500).json({
       success: false,
       message: "Lỗi khi thêm nguyên liệu!",

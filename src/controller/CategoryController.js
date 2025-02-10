@@ -93,3 +93,18 @@ exports.deleteCategory = async (req, res) => {
       .json({ success: false, message: "Lỗi khi xóa!", error: error.message });
   }
 };
+exports.getIdCategoryByName = async (req, res) => {
+  try {
+    const { name } = req.body;
+    const category = await categoryService.getIdCategoryByName(name);
+
+    if (!category) {
+      return res.status(404).json({ message: "Không tìm thấy danh mục!" });
+    }
+
+    return res.status(200).json({ _id: category._id });
+  } catch (error) {
+    console.error("Lỗi khi lấy ID danh mục:", error);
+    return res.status(500).json({ message: "Lỗi server!" });
+  }
+};
