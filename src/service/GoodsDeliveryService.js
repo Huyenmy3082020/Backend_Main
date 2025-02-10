@@ -1,5 +1,5 @@
-const GoodsDelivery = require("../models/goodsDelivery.model");
-const Inventory = require("../models/inventory.model");
+const GoodsDelivery = require("../models/DeliveriesModel");
+const Inventory = require("../models/InventoryModel");
 const mongoose = require("mongoose");
 
 // 🔹 Thêm phiếu nhập hàng

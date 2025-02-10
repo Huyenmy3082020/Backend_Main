@@ -1,4 +1,4 @@
-const Inventory = require("../models/inventory.model");
+const Inventory = require("../models/InventoryModel");
 
 // 🔹 Thêm hàng vào kho
 async function addInventory({ stock, productId, userId, status, location }) {
