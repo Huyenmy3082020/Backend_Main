@@ -8,18 +8,18 @@ async function createGoodsDelivery(data) {
   session.startTransaction();
   try {
     const goodsDelivery = new GoodsDelivery(data);
-    console.log(goodsDelivery);
+    console.log("goodsDelivery", goodsDelivery);
     await goodsDelivery.save({ session });
 
     // Cập nhật tồn kho cho từng sản phẩm
     for (const item of goodsDelivery.items) {
       await Inventory.findOneAndUpdate(
-        { productId: item.productId },
+        { ingredientsId: item.ingredientsId },
         { $inc: { stock: item.quantity } },
         { upsert: true, new: true, session }
       );
     }
-
+    ingredientsId;
     await session.commitTransaction();
     session.endSession();
     return goodsDelivery;

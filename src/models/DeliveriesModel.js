@@ -8,11 +8,6 @@ const goodsDeliverySchema = new mongoose.Schema(
       required: true,
     },
     items: [{}],
-    ingredientsId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Ingredient",
-      required: true,
-    },
     quantity: {
       type: Number,
       required: true,

@@ -7,9 +7,9 @@ const inventorySchema = new mongoose.Schema(
       required: true,
       min: 0, // Không cho phép số âm
     },
-    productId: {
+    ingredientsId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
+      ref: "Ingredient",
       required: true,
     },
     userId: {
