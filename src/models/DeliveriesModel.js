@@ -7,10 +7,10 @@ const goodsDeliverySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    orderItems: [{}],
-    productId: {
+    items: [{}],
+    ingredientsId: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: "Product",
+      ref: "Ingredient",
       required: true,
     },
     quantity: {

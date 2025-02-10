@@ -1,9 +1,9 @@
-const ingredientService = require("../service/IngredientService");
+const IngredientService = require("../service/InService");
 
 // 🟢 Thêm mới Ingredient
 exports.createIngredient = async (req, res) => {
   try {
-    const newIngredient = await ingredientService.createIngredient(req.body);
+    const newIngredient = await IngredientService.createIngredient(req.body);
     res.status(201).json({
       success: true,
       message: "Thêm thành công!",
@@ -21,7 +21,7 @@ exports.createIngredient = async (req, res) => {
 // 🔵 Lấy danh sách tất cả Ingredients
 exports.getAllIngredients = async (req, res) => {
   try {
-    const ingredients = await ingredientService.getAllIngredients();
+    const ingredients = await IngredientService.getAllIngredients();
     res.status(200).json({ success: true, ingredients });
   } catch (error) {
     res.status(500).json({
@@ -35,7 +35,7 @@ exports.getAllIngredients = async (req, res) => {
 // 🟡 Lấy một Ingredient theo ID
 exports.getIngredientById = async (req, res) => {
   try {
-    const ingredient = await ingredientService.getIngredientById(req.params.id);
+    const ingredient = await IngredientService.getIngredientById(req.params.id);
     if (!ingredient)
       return res
         .status(404)
@@ -54,7 +54,7 @@ exports.getIngredientById = async (req, res) => {
 // 🟠 Cập nhật Ingredient
 exports.updateIngredient = async (req, res) => {
   try {
-    const updatedIngredient = await ingredientService.updateIngredient(
+    const updatedIngredient = await IngredientService.updateIngredient(
       req.params.id,
       req.body
     );
@@ -80,7 +80,7 @@ exports.updateIngredient = async (req, res) => {
 // 🔴 Xóa Ingredient
 exports.deleteIngredient = async (req, res) => {
   try {
-    const deletedIngredient = await ingredientService.deleteIngredient(
+    const deletedIngredient = await IngredientService.deleteIngredient(
       req.params.id
     );
     if (!deletedIngredient)

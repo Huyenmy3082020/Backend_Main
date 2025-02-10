@@ -8,6 +8,7 @@ async function createGoodsDelivery(data) {
   session.startTransaction();
   try {
     const goodsDelivery = new GoodsDelivery(data);
+    console.log(goodsDelivery);
     await goodsDelivery.save({ session });
 
     // Cập nhật tồn kho cho từng sản phẩm

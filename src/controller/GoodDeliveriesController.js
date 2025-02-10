@@ -3,6 +3,7 @@ const GoodsDeliveryService = require("../service/GoodsDeliveryService");
 // Thêm phiếu nhập hàng
 async function createGoodsDelivery(req, res) {
   try {
+    console.log(req.body);
     const goodsDelivery = await GoodsDeliveryService.createGoodsDelivery(
       req.body
     );
