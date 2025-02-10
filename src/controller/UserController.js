@@ -6,41 +6,11 @@ const Jwtservice = require("../service/JwtService");
 const createUser = async (req, res) => {
   try {
     const { email, password, confirmPassword } = req.body;
-
-    const emailRegex = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,16}$/;
-    const passwordRegex = /^(?=.*[A-Z])(?=.*[\W_])(?=.*[a-zA-Z\d]).{6,}$/;
-
-    // Kiểm tra xem có trường nào bị bỏ trống không
-    if (!email || !password || !confirmPassword) {
+    const checkUser = await User.findOne({ email });
+    if (checkUser) {
       return res.status(400).json({
         status: "err",
-        message: "Không được bỏ trống trường nào",
-      });
-    }
-
-    // Kiểm tra định dạng email
-    const isEmailValid = emailRegex.test(email);
-    if (!isEmailValid) {
-      return res.status(400).json({
-        status: "err",
-        message: "Vui lòng điền đúng định dạng email",
-      });
-    }
-
-    // Kiểm tra mật khẩu có khớp không
-    if (password !== confirmPassword) {
-      return res.status(400).json({
-        status: "err",
-        message: "Mật khẩu và xác nhận mật khẩu không khớp",
-      });
-    }
-
-    // Kiểm tra mật khẩu có đúng định dạng không
-    const isPasswordValid = passwordRegex.test(password);
-    if (!isPasswordValid) {
-      return res.status(400).json({
-        status: "err",
-        message: "Mật khẩu phải có chữ cái viết hoa và ký tự đặc biệt",
+        message: "Email đã tồn tại",
       });
     }
 

@@ -1,4 +1,4 @@
-const ingredientService = require("../service/ingredientService");
+const ingredientService = require("../service/IngredientService");
 
 // 🟢 Thêm mới Ingredient
 exports.createIngredient = async (req, res) => {

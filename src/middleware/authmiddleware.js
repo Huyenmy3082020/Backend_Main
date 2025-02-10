@@ -40,6 +40,8 @@ const authUserMiddleware = (req, res, next) => {
   const userId = req.params.id;
   const authHeader = req.headers.authorization;
 
+  console.log(userId);
+  console.log(authHeader);
   if (!authHeader) {
     return res.status(401).json({
       mess: "Token xác thực không được cung cấp",

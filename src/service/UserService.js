@@ -14,14 +14,6 @@ const createUser = async (newUser) => {
   const { email, password } = newUser;
 
   try {
-    const checkUser = await User.findOne({ email });
-    if (checkUser) {
-      return {
-        status: "err",
-        message: "Email đã được đăng ký",
-      };
-    }
-
     const hashedPassword = bcrypt.hashSync(password, 10);
     const createdUser = await User.create({
       email,
