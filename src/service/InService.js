@@ -5,7 +5,7 @@ exports.createIngredient = async (data) => {
 };
 
 exports.getAllIngredients = async () => {
-  return await Ingredient.find().populate("categoryId").populate("supplierId");
+  return await Ingredient.find().populate("categoryId");
 };
 
 exports.getIngredientById = async (id) => {
