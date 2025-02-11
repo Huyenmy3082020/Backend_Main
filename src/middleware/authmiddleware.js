@@ -25,7 +25,7 @@ const authMiddleware = (req, res, next) => {
         status: "ERROR",
       });
     }
-    if (user?.isAdmin) {
+    if (user?.role === "admin") {
       next();
     } else {
       return res.status(403).json({
