@@ -53,12 +53,12 @@ const loginUser = async (userLogin) => {
     // Tạo access token và refresh token
     const accessToken = await generralAccesToken({
       id: checkUser.id,
-      isAdmin: checkUser.isAdmin,
+      role: checkUser.role,
     });
 
     const refreshToken = await generralRefreshToken({
       id: checkUser.id,
-      isAdmin: checkUser.isAdmin,
+      role: checkUser.role,
     });
 
     return {
@@ -109,7 +109,7 @@ const deleteUser = async (id) => {
       };
     }
 
-    // await User.findByIdAndDelete(id);
+    await User.findByIdAndDelete(id);
 
     return {
       status: "ok",
