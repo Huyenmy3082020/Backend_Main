@@ -3,19 +3,24 @@ const UserService = require("../service/UserService");
 
 require("dotenv").config();
 const Jwtservice = require("../service/JwtService");
+
 const createUser = async (req, res) => {
   try {
-    const { email, password, confirmPassword } = req.body;
+    const { email, password, avatar, phone } = req.body;
     const checkUser = await User.findOne({ email });
     if (checkUser) {
       return res.status(400).json({
         status: "err",
-        message: "Email đã tồn tại",
+        message: "Email đã tồn tại ! Vui lòng thử lại",
       });
     }
 
-    // Gọi dịch vụ để tạo người dùng mới
-    const response = await UserService.createUser(req.body);
+    const response = await UserService.createUser(
+      email,
+      password,
+      avatar,
+      phone
+    );
 
     return res.status(201).json(response); // Trả về thông tin người dùng sau khi tạo thành công
   } catch (error) {
@@ -153,6 +158,7 @@ const getAllUserbyId = async (req, res) => {
 const refreshTokenController = async (req, res) => {
   try {
     const refresh_token = req.cookies.refresh_token;
+    console.log(refresh_token);
     if (!refresh_token) {
       return res.status(400).json({
         status: "err",
