@@ -2,7 +2,6 @@ const GoodsDelivery = require("../models/DeliveriesModel");
 const Inventory = require("../models/InventoryModel");
 const mongoose = require("mongoose");
 
-// 🔹 Thêm phiếu nhập hàng
 async function createGoodsDelivery(data) {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -13,19 +12,29 @@ async function createGoodsDelivery(data) {
 
     // Cập nhật tồn kho cho từng sản phẩm
     for (const item of goodsDelivery.items) {
+      if (!item.ingredientsId) {
+        throw new Error("ingredientsId is missing in one of the items");
+      }
+
+      // Chuyển đổi ingredientsId sang ObjectId nếu cần
+      const ingredientObjectId = new mongoose.Types.ObjectId(
+        item.ingredientsId
+      );
+
       await Inventory.findOneAndUpdate(
-        { ingredientsId: item.ingredientsId },
+        { ingredientsId: ingredientObjectId }, // Đảm bảo ID đúng kiểu
         { $inc: { stock: item.quantity } },
         { upsert: true, new: true, session }
       );
     }
-    ingredientsId;
+
     await session.commitTransaction();
     session.endSession();
     return goodsDelivery;
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
+    console.error("Error in createGoodsDelivery:", error);
     throw error;
   }
 }
@@ -105,8 +114,12 @@ async function deleteGoodsDelivery(id) {
   }
 }
 
+async function getAllGoodsDeliveries() {
+  return await GoodsDelivery.find();
+}
 module.exports = {
   createGoodsDelivery,
   updateGoodsDelivery,
   deleteGoodsDelivery,
+  getAllGoodsDeliveries,
 };
