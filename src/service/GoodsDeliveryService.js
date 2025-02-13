@@ -76,6 +76,7 @@ async function updateGoodsDelivery(id, data) {
 
 // 🔹 Xóa phiếu nhập hàng
 async function deleteGoodsDelivery(id) {
+  console.log(id)
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
