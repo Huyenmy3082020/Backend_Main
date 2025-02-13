@@ -8,23 +8,18 @@ const goodsDeliverySchema = new mongoose.Schema(
       required: true,
     },
     items: [{}],
-    quantity: {
-      type: Number,
-      required: true,
-      min: 1,
-    },
+
     totalPrice: {
-      type: Number,
-      required: true,
+      type: String,
       min: 0,
     },
     deliveryDate: {
       type: Date,
       required: true,
+      default: Date.now,
     },
     deliveryAddress: {
       type: String,
-      required: true,
       trim: true,
     },
   },

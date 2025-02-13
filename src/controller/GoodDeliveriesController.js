@@ -1,5 +1,14 @@
 const GoodsDeliveryService = require("../service/GoodsDeliveryService");
-
+async function getAllGoodsDeliveries(req, res) {
+  try {
+    const goodsDeliveries = await GoodsDeliveryService.getAllGoodsDeliveries();
+    res.status(200).json(goodsDeliveries);
+  } catch (error) {
+    res
+      .status(500)
+      .json({ message: "Lỗi khi lấy danh sách phiếu nhập hàng", error });
+  }
+}
 // Thêm phiếu nhập hàng
 async function createGoodsDelivery(req, res) {
   try {
@@ -47,4 +56,5 @@ module.exports = {
   createGoodsDelivery,
   updateGoodsDelivery,
   deleteGoodsDelivery,
+  getAllGoodsDeliveries,
 };
