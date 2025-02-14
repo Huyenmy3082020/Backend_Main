@@ -41,6 +41,7 @@ async function updateGoodsDelivery(req, res) {
 async function deleteGoodsDelivery(req, res) {
   try {
     const { id } = req.params;
+    console.log(id)
     await GoodsDeliveryService.deleteGoodsDelivery(id);
     res.status(200).json({ message: "GoodsDelivery deleted" });
   } catch (error) {
