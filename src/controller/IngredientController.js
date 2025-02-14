@@ -5,7 +5,7 @@ const { findSupplierByName } = require("./repository/supplierRepository");
 // 🟢 Thêm mới Ingredient
 exports.createIngredient = async (req, res) => {
   try {
-    const { category, supplier, name, price, description } = req.body;
+    const { category, supplier, unit, name, price, description } = req.body;
 
     // Tìm Category & Supplier từ database
     const categoryObj = await findCategoryByName(category);
@@ -30,6 +30,7 @@ exports.createIngredient = async (req, res) => {
       supplierId,
       name,
       price,
+      unit,
       description,
     });
 

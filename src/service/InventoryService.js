@@ -2,15 +2,17 @@ const { default: mongoose } = require("mongoose");
 const Inventory = require("../models/InventoryModel");
 
 // 🔹 Thêm hàng vào kho
-async function addInventory({ stock, productId, userId, status, location }) {
+async function addInventory({ stock, productId, unit, userId, status, location }) {
   return await Inventory.create({
     stock,
     productId,
     userId,
     status,
+    unit,
     location,
   });
 }
+
 async function getInventory(ingredientsId) {
   try {
     // 📌 Kiểm tra xem ingredientsId có hợp lệ không (phải là ObjectId của MongoDB)
