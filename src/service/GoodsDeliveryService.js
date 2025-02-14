@@ -54,7 +54,7 @@ async function updateGoodsDelivery(id, data) {
     // Khôi phục tồn kho từ phiếu nhập cũ
     for (const item of existingGoodsDelivery.items) {
       await Inventory.findOneAndUpdate(
-        { productId: item.productId },
+        { ingredientsId: item.ingredientsId },
         { $inc: { stock: -item.quantity } },
         { session }
       );
@@ -67,7 +67,7 @@ async function updateGoodsDelivery(id, data) {
     // Cập nhật tồn kho từ phiếu nhập mới
     for (const item of existingGoodsDelivery.items) {
       await Inventory.findOneAndUpdate(
-        { productId: item.productId },
+        { ingredientsId: item.ingredientsId },
         { $inc: { stock: item.quantity } },
         { upsert: true, new: true, session }
       );
@@ -85,7 +85,7 @@ async function updateGoodsDelivery(id, data) {
 
 // 🔹 Xóa phiếu nhập hàng
 async function deleteGoodsDelivery(id) {
-  console.log(id)
+  console.log(id);
   const session = await mongoose.startSession();
   session.startTransaction();
   try {

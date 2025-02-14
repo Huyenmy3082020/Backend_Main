@@ -12,22 +12,19 @@ const inventorySchema = new mongoose.Schema(
       ref: "Ingredient",
       required: true,
     },
-    userId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "User",
-      required: true,
-    },
     status: {
       type: String,
-      enum: ["in-stock", "out-of-stock", "pending", "transferred"],
+      enum: ["in-stock", "out-of-stock"],
       default: "in-stock",
-    },
-    location: {
-      type: String,
-      default: "Warehouse A",
     },
   },
   { timestamps: true }
 );
+
+// ✅ Middleware tự động cập nhật status trước khi lưu
+inventorySchema.pre("save", function (next) {
+  this.status = this.stock > 0 ? "in-stock" : "out-of-stock";
+  next();
+});
 
 module.exports = mongoose.model("Inventory", inventorySchema);
