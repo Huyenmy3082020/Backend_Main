@@ -64,8 +64,9 @@ const authUserMiddleware = (req, res, next) => {
       });
     }
     console.log("user?.id", user?.id);
+    console.log(" user?.role", user?.role);
     console.log("userId", userId);
-    if (user?.id === userId) {
+    if (user?.id === userId || user?.role === "admin") {
       next();
     } else {
       return res.status(403).json({

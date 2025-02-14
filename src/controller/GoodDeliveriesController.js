@@ -9,7 +9,6 @@ async function getAllGoodsDeliveries(req, res) {
       .json({ message: "Lỗi khi lấy danh sách phiếu nhập hàng", error });
   }
 }
-// Thêm phiếu nhập hàng
 async function createGoodsDelivery(req, res) {
   try {
     console.log(req.body);
@@ -24,7 +23,6 @@ async function createGoodsDelivery(req, res) {
   }
 }
 
-// Sửa phiếu nhập hàng
 async function updateGoodsDelivery(req, res) {
   try {
     const { id } = req.params;
@@ -40,7 +38,6 @@ async function updateGoodsDelivery(req, res) {
   }
 }
 
-// Xóa phiếu nhập hàng
 async function deleteGoodsDelivery(req, res) {
   try {
     const { id } = req.params;
