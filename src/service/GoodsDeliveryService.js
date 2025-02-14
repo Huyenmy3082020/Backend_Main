@@ -113,13 +113,15 @@ async function deleteGoodsDelivery(id) {
     session.endSession();
     throw error;
   }
-}
-async function getAllGoodsDeliveries() {
+}async function getAllGoodsDeliveries() {
   return await GoodsDelivery.find()
-    .populate("items.ingredientsId")
-    .select("name price")
+    .populate({
+      path: "items.ingredientsId",
+      select: "name price quantity", // Thêm quantity vào select
+    })
     .populate("userId");
 }
+
 module.exports = {
   createGoodsDelivery,
   updateGoodsDelivery,
