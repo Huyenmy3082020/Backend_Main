@@ -113,9 +113,11 @@ async function deleteGoodsDelivery(id) {
     throw error;
   }
 }
-
 async function getAllGoodsDeliveries() {
-  return await GoodsDelivery.find();
+  return await GoodsDelivery.find()
+    .populate("items.ingredientsId")
+    .select("name price")
+    .populate("userId");
 }
 module.exports = {
   createGoodsDelivery,

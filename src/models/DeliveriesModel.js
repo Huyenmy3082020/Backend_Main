@@ -7,7 +7,19 @@ const goodsDeliverySchema = new mongoose.Schema(
       ref: "User",
       required: true,
     },
-    items: [{}],
+    items: [
+      {
+        ingredientsId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "Ingredient",
+          required: true,
+        },
+        quantity: {
+          type: Number,
+          min: 1,
+        },
+      },
+    ],
 
     totalPrice: {
       type: String,
