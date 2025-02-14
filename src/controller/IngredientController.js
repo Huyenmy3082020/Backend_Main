@@ -84,14 +84,18 @@ exports.getIngredientById = async (req, res) => {
 // 🟠 Cập nhật Ingredient
 exports.updateIngredient = async (req, res) => {
   try {
+    const existingIngredient = await IngredientService.getIngredientById(
+      req.params.id
+    );
+    if (!existingIngredient)
+      return res
+        .status(404)
+        .json({ success: false, message: "Không tìm thấy nguyên liệu!" });
+
     const updatedIngredient = await IngredientService.updateIngredient(
       req.params.id,
       req.body
     );
-    if (!updatedIngredient)
-      return res
-        .status(404)
-        .json({ success: false, message: "Không tìm thấy nguyên liệu!" });
 
     res.status(200).json({
       success: true,
