@@ -116,10 +116,14 @@ async function deleteGoodsDelivery(id) {
 }
 async function getAllGoodsDeliveries() {
   return await GoodsDelivery.find()
-    .populate("items.ingredientsId")
-    .select("name price")
-    .populate("userId");
+    .populate({
+      path: "items.ingredientsId",
+      select: "name price _id", // Lấy các thông tin cần thiết từ Ingredient
+    })
+    .populate("userId") // Populate thông tin user nếu cần
+    .select("items quantity totalPrice deliveryDate deliveryAddress");
 }
+
 module.exports = {
   createGoodsDelivery,
   updateGoodsDelivery,
