@@ -18,6 +18,7 @@ const goodsDeliverySchema = new mongoose.Schema(
           type: Number,
           min: 1,
         },
+        price: { type: Number, required: true },
       },
     ],
 
