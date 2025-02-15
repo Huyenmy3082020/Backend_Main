@@ -39,10 +39,13 @@ async function createGoodsDelivery(data) {
   }
 }
 
-// 🔹 Sửa phiếu nhập hàng
 async function updateGoodsDelivery(id, data) {
+  console.log("id", id);
+  console.log("data", data);
+
   const session = await mongoose.startSession();
   session.startTransaction();
+
   try {
     const existingGoodsDelivery = await GoodsDelivery.findById(id).session(
       session
@@ -51,27 +54,49 @@ async function updateGoodsDelivery(id, data) {
       throw new Error("GoodsDelivery not found");
     }
 
-    // Khôi phục tồn kho từ phiếu nhập cũ
-    for (const item of existingGoodsDelivery.items) {
-      await Inventory.findOneAndUpdate(
-        { ingredientsId: item.ingredientsId },
-        { $inc: { stock: -item.quantity } },
-        { session }
+    // 🔹 1. Chuyển đổi _id thành ingredientsId trước khi cập nhật
+    const updatedItems = existingGoodsDelivery.items.map((oldItem) => {
+      const newItem = data.find((item) => item._id === oldItem.ingredientsId);
+      return {
+        ingredientsId: oldItem.ingredientsId, // Giữ nguyên ID
+        name: oldItem.name, // Giữ nguyên tên cũ
+        price: oldItem.price, // Giữ nguyên giá cũ
+        quantity: newItem ? newItem.quantity : oldItem.quantity, // Chỉ cập nhật số lượng nếu có
+      };
+    });
+
+    // 🔹 2. Cập nhật tồn kho theo sự chênh lệch số lượng
+    for (const oldItem of existingGoodsDelivery.items) {
+      const newItem = updatedItems.find(
+        (item) => item.ingredientsId === oldItem.ingredientsId
       );
+
+      if (newItem) {
+        const delta = newItem.quantity - oldItem.quantity; // ✅ Chênh lệch số lượng
+        await Inventory.findOneAndUpdate(
+          { ingredientsId: oldItem.ingredientsId },
+          { $inc: { stock: -delta } }, // ✅ Chỉ cập nhật đúng chênh lệch
+          { upsert: true, new: true, session }
+        );
+      }
     }
 
-    // Cập nhật phiếu nhập
-    existingGoodsDelivery.set(data);
+    // 🔹 3. Tính tổng tiền (`totalPrice`)
+    const totalPrice = updatedItems.reduce(
+      (sum, item) => sum + item.price * item.quantity,
+      0
+    );
+
+    // 🔹 4. Định dạng tiền thành VND
+    const formattedTotalPrice = new Intl.NumberFormat("vi-VN", {
+      style: "currency",
+      currency: "VND",
+    }).format(totalPrice);
+
+    // 🔹 5. Cập nhật lại items và tổng tiền của phiếu nhập
+    existingGoodsDelivery.items = updatedItems;
+    existingGoodsDelivery.totalPrice = formattedTotalPrice;
     await existingGoodsDelivery.save({ session });
-
-    // Cập nhật tồn kho từ phiếu nhập mới
-    for (const item of existingGoodsDelivery.items) {
-      await Inventory.findOneAndUpdate(
-        { ingredientsId: item.ingredientsId },
-        { $inc: { stock: item.quantity } },
-        { upsert: true, new: true, session }
-      );
-    }
 
     await session.commitTransaction();
     session.endSession();

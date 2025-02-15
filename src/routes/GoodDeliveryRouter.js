@@ -1,13 +1,29 @@
 const express = require("express");
 const GoodsDeliveryController = require("../controller/GoodDeliveriesController");
+const {
+  authMiddleware,
+  authUserMiddleware,
+} = require("../middleware/authmiddleware");
 
 const router = express.Router();
 
-router.post("/", GoodsDeliveryController.createGoodsDelivery);
-router.get("/getAll", GoodsDeliveryController.getAllGoodsDeliveries);
+router.post("/", authMiddleware, GoodsDeliveryController.createGoodsDelivery);
+router.get(
+  "/getAll",
+  authMiddleware,
+  GoodsDeliveryController.getAllGoodsDeliveries
+);
 
-router.put("/:id", GoodsDeliveryController.updateGoodsDelivery);
+router.put(
+  "/:id",
+  authUserMiddleware,
+  GoodsDeliveryController.updateGoodsDelivery
+);
 
-router.delete("/:id", GoodsDeliveryController.deleteGoodsDelivery);
+router.delete(
+  "/:id",
+  authUserMiddleware,
+  GoodsDeliveryController.deleteGoodsDelivery
+);
 
 module.exports = router;
