@@ -6,6 +6,7 @@ const ingredientSchemae = new mongoose.Schema(
     supplierId: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier" },
     name: { type: String, required: true, unique: true },
     price: { type: Number, required: true },
+    unit: { type: String, require: true },
     description: { type: String, required: true },
     updatedAt: { type: Date },
     status: { type: Boolean, default: true },
