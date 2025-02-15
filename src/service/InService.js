@@ -5,7 +5,7 @@ exports.createIngredient = async (data) => {
 };
 
 exports.getAllIngredients = async () => {
-  return await Ingredient.find().populate("categoryId");
+  return await Ingredient.find({ isDeleted: false }).populate("categoryId");
 };
 
 exports.getIngredientById = async (id) => {
@@ -17,5 +17,9 @@ exports.updateIngredient = async (id, data) => {
 };
 
 exports.deleteIngredient = async (id) => {
-  return await Ingredient.findByIdAndDelete(id);
+  return await Ingredient.findByIdAndUpdate(
+    id,
+    { isDeleted: true },
+    { new: true }
+  );
 };

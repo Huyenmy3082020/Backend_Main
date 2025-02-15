@@ -11,10 +11,10 @@ async function createInventory(req, res) {
 
 async function getInventory(req, res) {
   try {
-    const { ingredientsId } = req.params; // Nhận id từ URL
-    console.log("Received ingredientsId:", ingredientsId);
+    const { id } = req.params; // Nhận `id` từ URL (thống nhất với router)
+    console.log("Received ingredientsId:", id);
 
-    const data = await InventoryService.getInventory(ingredientsId);
+    const data = await InventoryService.getInventoryById(id);
 
     res.status(200).json({ message: "Inventory Info", data });
   } catch (error) {
