@@ -121,7 +121,7 @@ async function getAllGoodsDeliveries() {
       select: "name price _id", // Lấy các thông tin cần thiết từ Ingredient
     })
     .populate("userId") // Populate thông tin user nếu cần
-    .select("items quantity totalPrice deliveryDate deliveryAddress");
+    .select("items quantity totalPrice deliveryDate deliveryAddress price");
 }
 
 module.exports = {
