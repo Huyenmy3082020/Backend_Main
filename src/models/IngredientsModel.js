@@ -1,12 +1,16 @@
 const mongoose = require("mongoose");
 
-const ingredientSchemae = new mongoose.Schema(
+const ingredientSchema = new mongoose.Schema(
   {
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
     supplierId: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier" },
     name: { type: String, required: true, unique: true },
     price: { type: Number, required: true },
-    unit: { type: String, require: true },
+    unit: {
+      type: String,
+      required: true,
+      enum: ["ml", "l", "g", "kg", "cái", "hộp", "gói", "chai", "ly"],
+    },
     description: { type: String, required: true },
     updatedAt: { type: Date },
     status: { type: Boolean, default: true },
@@ -15,4 +19,4 @@ const ingredientSchemae = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Ingredient", ingredientSchemae);
+module.exports = mongoose.model("Ingredient", ingredientSchema);

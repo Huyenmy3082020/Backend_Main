@@ -81,7 +81,6 @@ const deleteAllCard = async (req, res) => {
   try {
     const { cart, productId } = req.body;
 
-    console.log("cart", cart, productId);
     await CartService.deleteAllCard(cart, productId);
 
     return res.status(200).json({ status: "ok" });
@@ -97,7 +96,6 @@ const deleteSoft = async (req, res) => {
   try {
     const { cartId, productId } = req.body;
 
-    console.log(cartId, productId);
     await CartService.deleteSoft(cartId, productId);
 
     return res.status(200).json({ status: "ok" });

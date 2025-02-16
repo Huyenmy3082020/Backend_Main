@@ -12,18 +12,26 @@ const goodsDeliverySchema = new mongoose.Schema(
         ingredientsId: {
           type: mongoose.Schema.Types.ObjectId,
           ref: "Ingredient",
-          required: true,
         },
         quantity: {
           type: Number,
           min: 1,
+          required: true,
+        },
+        priceAtPurchase: {
+          type: Number, // Lưu giá nguyên liệu tại thời điểm mua
+          required: true,
+        },
+        ingredientNameAtPurchase: {
+          type: String,
+          required: true,
         },
       },
     ],
-
     totalPrice: {
-      type: String,
+      type: Number,
       min: 0,
+      required: true,
     },
     deliveryDate: {
       type: Date,

@@ -11,8 +11,7 @@ async function createInventory(req, res) {
 
 async function getInventory(req, res) {
   try {
-    const { id } = req.params; // Nhận `id` từ URL (thống nhất với router)
-    console.log("Received ingredientsId:", id);
+    const { id } = req.params;
 
     const data = await InventoryService.getInventoryById(id);
 

@@ -2,27 +2,53 @@ const GoodsDelivery = require("../models/DeliveriesModel");
 const Inventory = require("../models/InventoryModel");
 const mongoose = require("mongoose");
 
+const Ingredient = require("../models/IngredientsModel");
+
 async function createGoodsDelivery(data) {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-    const goodsDelivery = new GoodsDelivery(data);
-    console.log("goodsDelivery", goodsDelivery);
+    let { userId, items, deliveryAddress } = data;
+
+    const updatedItems = await Promise.all(
+      items.map(async (item) => {
+        if (!item.ingredientsId) {
+          throw new Error("ingredientsId is missing in one of the items");
+        }
+
+        const ingredient = await Ingredient.findById(
+          item.ingredientsId
+        ).session(session);
+        if (!ingredient) {
+          throw new Error(`Ingredient with ID ${item.ingredientsId} not found`);
+        }
+
+        return {
+          ingredientsId: ingredient._id,
+          ingredientNameAtPurchase: ingredient.name, // Lưu tên nguyên liệu
+          quantity: item.quantity,
+          priceAtPurchase: ingredient.price, // Lưu giá tại thời điểm nhập
+        };
+      })
+    );
+
+    const totalPrice = updatedItems.reduce(
+      (sum, item) => sum + item.quantity * item.priceAtPurchase,
+      0
+    );
+
+    const goodsDelivery = new GoodsDelivery({
+      userId,
+      items: updatedItems,
+      totalPrice,
+      deliveryAddress,
+    });
+
     await goodsDelivery.save({ session });
 
-    // Cập nhật tồn kho cho từng sản phẩm
-    for (const item of goodsDelivery.items) {
-      if (!item.ingredientsId) {
-        throw new Error("ingredientsId is missing in one of the items");
-      }
-
-      // Chuyển đổi ingredientsId sang ObjectId nếu cần
-      const ingredientObjectId = new mongoose.Types.ObjectId(
-        item.ingredientsId
-      );
-
+    for (const item of updatedItems) {
       await Inventory.findOneAndUpdate(
-        { ingredientsId: ingredientObjectId }, // Đảm bảo ID đúng kiểu
+        { ingredientsId: item.ingredientsId },
         { $inc: { stock: item.quantity } },
         { upsert: true, new: true, session }
       );
@@ -30,6 +56,7 @@ async function createGoodsDelivery(data) {
 
     await session.commitTransaction();
     session.endSession();
+
     return goodsDelivery;
   } catch (error) {
     await session.abortTransaction();
@@ -39,7 +66,6 @@ async function createGoodsDelivery(data) {
   }
 }
 
-// 🔹 Sửa phiếu nhập hàng
 async function updateGoodsDelivery(id, data) {
   const session = await mongoose.startSession();
   session.startTransaction();
@@ -51,21 +77,46 @@ async function updateGoodsDelivery(id, data) {
       throw new Error("GoodsDelivery not found");
     }
 
-    // Khôi phục tồn kho từ phiếu nhập cũ
     for (const item of existingGoodsDelivery.items) {
       await Inventory.findOneAndUpdate(
         { ingredientsId: item.ingredientsId },
         { $inc: { stock: -item.quantity } },
-        { session }
+        { upsert: true, new: true, session }
       );
     }
 
-    // Cập nhật phiếu nhập
-    existingGoodsDelivery.set(data);
+    const updatedItems = await Promise.all(
+      data.items.map(async (item) => {
+        if (!item.ingredientsId) {
+          throw new Error("ingredientsId is missing in one of the items");
+        }
+
+        let ingredient = await Ingredient.findById(item.ingredientsId).session(
+          session
+        );
+        if (!ingredient) {
+          throw new Error(`Ingredient with ID ${item.ingredientsId} not found`);
+        }
+
+        return {
+          ingredientsId: item.ingredientsId,
+          ingredientNameAtPurchase: ingredient.name, // Lưu tên nguyên liệu cập nhật
+          quantity: item.quantity,
+          priceAtPurchase: ingredient.price,
+        };
+      })
+    );
+
+    const totalPrice = updatedItems.reduce(
+      (sum, item) => sum + item.quantity * item.priceAtPurchase,
+      0
+    );
+
+    existingGoodsDelivery.items = updatedItems;
+    existingGoodsDelivery.totalPrice = totalPrice;
     await existingGoodsDelivery.save({ session });
 
-    // Cập nhật tồn kho từ phiếu nhập mới
-    for (const item of existingGoodsDelivery.items) {
+    for (const item of updatedItems) {
       await Inventory.findOneAndUpdate(
         { ingredientsId: item.ingredientsId },
         { $inc: { stock: item.quantity } },
@@ -85,7 +136,6 @@ async function updateGoodsDelivery(id, data) {
 
 // 🔹 Xóa phiếu nhập hàng
 async function deleteGoodsDelivery(id) {
-  console.log(id);
   const session = await mongoose.startSession();
   session.startTransaction();
   try {

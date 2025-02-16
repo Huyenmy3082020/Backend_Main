@@ -3,6 +3,7 @@ const UserService = require("../service/UserService");
 
 require("dotenv").config();
 const Jwtservice = require("../service/JwtService");
+const jwt = require("jsonwebtoken");
 
 const createUser = async (req, res) => {
   try {
@@ -33,52 +34,47 @@ const createUser = async (req, res) => {
 
 const loginUserController = async (req, res) => {
   try {
+    console.log("🔥 Body nhận được:", req.body);
+
     const { email, password } = req.body;
-    const reg = /^\w+([-+.']\w+)*@\w+([-.]\w+)*\.\w+([-.]\w+)*$/;
-    const isCheckEmail = reg.test(email);
 
     if (!email || !password) {
       return res.status(400).json({
         status: "ERR",
-        message: "The input is required",
-      });
-    } else if (!isCheckEmail) {
-      return res.status(400).json({
-        status: "ERR",
-        message: "Vui lòng nhập đúng email",
+        message: "Thiếu email hoặc mật khẩu",
       });
     }
 
+    // Gọi service để xử lý đăng nhập
     const response = await UserService.loginUser({ email, password });
 
-    // Kiểm tra nếu có lỗi trong response
     if (response.status === "ERR") {
-      return res.status(400).json({
-        status: "ERR",
-        message: response.message,
-      });
+      return res.status(400).json(response);
     }
 
-    const { refreshToken, ...data } = response;
-
-    // Gửi refresh token qua cookie
-    res.cookie("refresh_token", refreshToken, {
+    // ✅ Lưu accessToken vào cookie
+    res.cookie("access_token", response.accessToken, {
       httpOnly: true,
       secure: false,
-      sameSite: "strict",
-      path: "/",
+      sameSite: "Strict",
     });
 
-    return res.status(200).json({
-      ...data,
-      refreshToken,
+    // ✅ Lưu refreshToken vào cookie
+    res.cookie("refresh_token", response.refreshToken, {
+      httpOnly: true,
+      secure: false,
+      sameSite: "Strict",
     });
+
+    return res.json({
+      status: "OK",
+      message: "Đăng nhập thành công",
+    }); // ❌ Không trả accessToken & refreshToken về response nữa
   } catch (error) {
-    console.error(error);
+    console.error("❌ Lỗi server:", error);
     return res.status(500).json({
       status: "ERR",
-      message: "Internal Server Error",
-      error: error.message,
+      message: "Lỗi server",
     });
   }
 };
@@ -136,18 +132,29 @@ const getAll = async (req, res) => {
 
 const getAllUserbyId = async (req, res) => {
   try {
-    const id = req.params.id;
+    console.log("🔥 Request nhận được:", req.headers);
+    console.log("🔥 Cookies:", req.cookies);
+    console.log("🔥 Token đã giải mã:", req.user);
 
-    const response = await UserService.getAllUserbyId(id);
-    if (response.data) {
+    // ✅ Kiểm tra req.user có tồn tại không
+    if (!req.user || !req.user.id) {
+      return res.status(401).json({ status: "err", mess: "Unauthorized" });
+    }
+
+    const userId = req.user.id;
+    console.log("🔍 User ID từ token:", userId);
+
+    // ✅ Gọi service lấy dữ liệu người dùng
+    const response = await UserService.getAllUserById(userId);
+    console.log("📢 Kết quả từ UserService:", response);
+
+    if (response.status === "ok") {
       return res.status(200).json(response);
     } else {
-      return res.status(404).json({
-        status: "err",
-        mess: "User not found",
-      });
+      return res.status(404).json(response);
     }
   } catch (error) {
+    console.error("❌ Lỗi trong getAllUserbyId:", error);
     return res.status(400).json({
       status: "err",
       mess: error.message || "An error occurred",
@@ -158,17 +165,32 @@ const getAllUserbyId = async (req, res) => {
 const refreshTokenController = async (req, res) => {
   try {
     const refresh_token = req.cookies.refresh_token;
-    console.log(refresh_token);
+
+    console.log("Refresh token", refresh_token);
     if (!refresh_token) {
       return res.status(400).json({
-        status: "err",
+        status: "error",
         message: "Refresh token is required",
       });
     }
 
     const result = await Jwtservice.refreshToken(refresh_token);
 
-    return res.status(200).json(result);
+    if (result.status !== "success") {
+      return res.status(401).json(result);
+    }
+
+    // 🔥 Set access_token vào HttpOnly cookie
+    res.cookie("access_token", result.data.access_token, {
+      httpOnly: true, // Không cho JS truy cập
+      secure: false, // Chỉ gửi qua HTTPS
+      sameSite: "Strict", // Ngăn chặn CSRF
+    });
+
+    return res.status(200).json({
+      status: "success",
+      message: "Token refreshed successfully",
+    });
   } catch (error) {
     return res.status(500).json({
       status: "error",

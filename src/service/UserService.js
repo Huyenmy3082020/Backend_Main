@@ -30,8 +30,7 @@ const createUser = async (email, password, avatar, phone) => {
   }
 };
 
-const loginUser = async (userLogin) => {
-  const { email, password } = userLogin;
+const loginUser = async ({ email, password }) => {
   try {
     const checkUser = await User.findOne({ email });
 
@@ -42,15 +41,14 @@ const loginUser = async (userLogin) => {
       };
     }
 
-    const comparePassword = bcrypt.compareSync(password, checkUser.password);
-    if (!comparePassword) {
+    const isPasswordValid = bcrypt.compareSync(password, checkUser.password);
+    if (!isPasswordValid) {
       return {
         status: "ERR",
         message: "Mật khẩu hoặc người dùng không đúng",
       };
     }
 
-    // Tạo access token và refresh token
     const accessToken = await generralAccesToken({
       id: checkUser.id,
       role: checkUser.role,
@@ -68,14 +66,17 @@ const loginUser = async (userLogin) => {
       refreshToken,
     };
   } catch (error) {
-    throw error; // Đảm bảo có log lỗi trong catch
+    console.error("❌ Lỗi trong loginUser Service:", error);
+    return {
+      status: "ERR",
+      message: "Lỗi server",
+    };
   }
 };
 
 const updateUser = async (id, data) => {
   return new Promise(async (resolve, reject) => {
     try {
-      console.log(id, data);
       const checkUser = await User.findById(id);
 
       if (!checkUser) {
@@ -134,24 +135,30 @@ const getAll = async () => {
   });
 };
 
-const getAllUserbyId = async (userId) => {
+const getAllUserById = async (userId) => {
   try {
+    console.log("🔎 Đang tìm user ID:", userId);
+
+    // ✅ Tìm user theo `id`
     const userData = await User.findById(userId);
+    console.log("✅ Dữ liệu user tìm thấy:", userData);
+
     if (!userData) {
-      return { error: "Người dùng không tồn tại" };
+      console.error("❌ Không tìm thấy người dùng!");
+      return { status: "err", mess: "Người dùng không tồn tại" };
     }
 
-    return { data: userData };
+    return { status: "ok", data: userData };
   } catch (error) {
-    throw new Error(error.message);
+    console.error("❌ Lỗi truy vấn MongoDB:", error);
+    return { status: "err", mess: error.message || "An error occurred" };
   }
 };
-
 module.exports = {
   createUser,
   loginUser,
   updateUser,
   deleteUser,
   getAll,
-  getAllUserbyId,
+  getAllUserById,
 };

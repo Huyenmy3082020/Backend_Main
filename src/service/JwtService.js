@@ -4,7 +4,7 @@ dotenv.config();
 
 const generralAccesToken = async (payload) => {
   const access_token = jwt.sign(payload, process.env.ACCESS_TOKEN, {
-    expiresIn: "10d",
+    expiresIn: "15s",
   });
   return access_token;
 };
@@ -26,6 +26,7 @@ const refreshToken = (token) => {
             message: "Token is invalid or expired",
           });
         }
+
         const access_token = await generralAccesToken({
           id: user.id,
           isAdmin: user.isAdmin,
@@ -33,10 +34,7 @@ const refreshToken = (token) => {
 
         resolve({
           status: "success",
-          message: "Token refreshed successfully",
-          data: {
-            access_token,
-          },
+          data: { access_token },
         });
       });
     } catch (error) {
@@ -48,6 +46,7 @@ const refreshToken = (token) => {
     }
   });
 };
+
 module.exports = {
   generralAccesToken,
   generralRefreshToken,

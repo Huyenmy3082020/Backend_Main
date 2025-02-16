@@ -163,7 +163,6 @@ const alterAmount = async (productId, altam) => {
 const deleteAllCard = async (cart, productId) => {
   try {
     const cart1 = await Cart.findById(cart);
-    console.log(cart1);
 
     if (!cart1) {
       throw new Error("Cart not found");

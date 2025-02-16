@@ -22,8 +22,6 @@ exports.createIngredient = async (req, res) => {
     const categoryId = categoryObj._id.toString();
     const supplierId = supplierObj._id.toString();
 
-    console.log("Category ID:", categoryId, "Supplier ID:", supplierId);
-
     // Gọi service để tạo nguyên liệu
     const newIngredient = await IngredientService.createIngredient({
       categoryId,
