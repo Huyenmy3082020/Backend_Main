@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const goodsDeliverySchema = new mongoose.Schema(
+const goodsShipmentSchema = new mongoose.Schema(
   {
     userId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -18,7 +18,7 @@ const goodsDeliverySchema = new mongoose.Schema(
           min: 1,
           required: true,
         },
-        priceAtPurchase: {
+        priceAtShipment: {
           type: Number,
           required: true,
         },
@@ -33,17 +33,13 @@ const goodsDeliverySchema = new mongoose.Schema(
       min: 0,
       required: true,
     },
-    deliveryDate: {
+    shipmentDate: {
       type: Date,
       required: true,
       default: Date.now,
-    },
-    deliveryAddress: {
-      type: String,
-      trim: true,
     },
   },
   { timestamps: true }
 );
 
-module.exports = mongoose.model("GoodsDelivery", goodsDeliverySchema);
+module.exports = mongoose.model("Shipment", goodsShipmentSchema);

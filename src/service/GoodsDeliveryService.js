@@ -173,10 +173,73 @@ async function getAllGoodsDeliveries() {
     .populate("userId") // Populate thông tin user nếu cần
     .select("items quantity totalPrice deliveryDate deliveryAddress");
 }
+async function createGoodsShipment(data) {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+  try {
+    let { userId, items, deliveryAddress } = data;
+
+    const updatedItems = await Promise.all(
+      items.map(async (item) => {
+        if (!item.ingredientsId) {
+          throw new Error("ingredientsId is missing in one of the items");
+        }
+
+        const inventoryItem = await Inventory.findOne({
+          ingredientsId: item.ingredientsId,
+        }).session(session);
+        if (!inventoryItem || inventoryItem.stock < item.quantity) {
+          throw new Error(
+            `Not enough stock for ingredient ID ${item.ingredientsId}`
+          );
+        }
+
+        return {
+          ingredientsId: item.ingredientsId,
+          quantity: item.quantity,
+          priceAtShipment: inventoryItem.price, // Lưu giá tại thời điểm xuất kho
+        };
+      })
+    );
+
+    const totalPrice = updatedItems.reduce(
+      (sum, item) => sum + item.quantity * item.priceAtShipment,
+      0
+    );
+
+    const goodsShipment = new GoodsShipment({
+      userId,
+      items: updatedItems,
+      totalPrice,
+      deliveryAddress,
+    });
+
+    await goodsShipment.save({ session });
+
+    for (const item of updatedItems) {
+      await Inventory.findOneAndUpdate(
+        { ingredientsId: item.ingredientsId },
+        { $inc: { stock: -item.quantity } },
+        { session }
+      );
+    }
+
+    await session.commitTransaction();
+    session.endSession();
+
+    return goodsShipment;
+  } catch (error) {
+    await session.abortTransaction();
+    session.endSession();
+    console.error("Error in createGoodsShipment:", error);
+    throw error;
+  }
+}
 
 module.exports = {
   createGoodsDelivery,
   updateGoodsDelivery,
   deleteGoodsDelivery,
   getAllGoodsDeliveries,
+  createGoodsShipment,
 };

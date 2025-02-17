@@ -46,10 +46,22 @@ async function deleteGoodsDelivery(req, res) {
     res.status(400).json({ message: error.message });
   }
 }
-
+async function createGoodsShipment(req, res) {
+  try {
+    const goodsShipment = await GoodsDeliveryService.createGoodsShipment(
+      req.body
+    );
+    res
+      .status(201)
+      .json({ message: "GoodsShipment created", data: goodsShipment });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
 module.exports = {
   createGoodsDelivery,
   updateGoodsDelivery,
   deleteGoodsDelivery,
   getAllGoodsDeliveries,
+  createGoodsShipment,
 };

@@ -7,7 +7,7 @@ const jwt = require("jsonwebtoken");
 
 const createUser = async (req, res) => {
   try {
-    const { email, password, avatar, phone } = req.body;
+    const { email, password, avatar, phone, name } = req.body;
     const checkUser = await User.findOne({ email });
     if (checkUser) {
       return res.status(400).json({
@@ -20,7 +20,8 @@ const createUser = async (req, res) => {
       email,
       password,
       avatar,
-      phone
+      phone,
+      name
     );
 
     return res.status(201).json(response); // Trả về thông tin người dùng sau khi tạo thành công
@@ -81,32 +82,37 @@ const loginUserController = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
-    const userId = req.params.id;
+    // Lấy userId từ req.user (đã được gán trong middleware authenticateToken)
+    const userId = req.user.id; // Chắc chắn rằng middleware authenticateToken gán id vào req.user
     const data = req.body;
 
+    // Nếu không có userId thì trả về lỗi
     if (!userId) {
       return res.status(400).json({
         status: "err",
-        err: "the user id is not defind",
+        err: "User not found in token",
       });
     }
+
     const response = await UserService.updateUser(userId, data);
     return res.status(200).json(response);
   } catch (error) {
     return res.status(404).json({
-      message: error,
+      message: error.message || error,
     });
   }
 };
 
 const deleteUser = async (req, res) => {
   try {
-    const userId = req.params.id;
+    // Lấy userId từ req.user (đã được gán trong middleware authenticateToken)
+    const userId = req.user.id; // Chắc chắn rằng middleware authenticateToken gán id vào req.user
 
+    // Nếu không có userId thì trả về lỗi
     if (!userId) {
       return res.status(400).json({
         status: "err",
-        err: "the user id is not defind",
+        err: "User not found in token",
       });
     }
 
@@ -114,7 +120,7 @@ const deleteUser = async (req, res) => {
     return res.status(200).json(response);
   } catch (error) {
     return res.status(404).json({
-      message: error,
+      message: error.message || error,
     });
   }
 };

@@ -10,7 +10,7 @@ const {
 
 require("dotenv").config();
 
-const createUser = async (email, password, avatar, phone) => {
+const createUser = async (email, password, avatar, phone, name) => {
   try {
     const hashedPassword = bcrypt.hashSync(password, 10);
     const createdUser = await User.create({
@@ -18,6 +18,7 @@ const createUser = async (email, password, avatar, phone) => {
       password: hashedPassword,
       avatar,
       phone,
+      name,
     });
 
     return {

@@ -3,13 +3,15 @@ const router = express.Router();
 const ingredientController = require("../controller/IngredientController");
 const {
   authMiddleware,
-  authUserMiddleware,
+  authenticateToken,
 } = require("../middleware/authmiddleware");
 
-router.post("/", ingredientController.createIngredient); // Thêm mới
-router.get("/", ingredientController.getAllIngredients); // Lấy tất cả
-router.get("/:id", ingredientController.getIngredientById); // Lấy theo ID
-router.put("/:id", ingredientController.updateIngredient); // Cập nhật
-router.delete("/:id", ingredientController.deleteIngredient); // Xóa
+router.post("/", authenticateToken, ingredientController.createIngredient);
+
+router.get("/", ingredientController.getAllIngredients);
+router.get("/:id", ingredientController.getIngredientById);
+
+router.put("/:id", authMiddleware, ingredientController.updateIngredient);
+router.delete("/:id", authenticateToken, ingredientController.deleteIngredient);
 
 module.exports = router;
