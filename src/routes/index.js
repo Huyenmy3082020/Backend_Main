@@ -6,6 +6,7 @@ const CartRouter = require("../routes/CartRouter");
 const GoodDeliveriesRouter = require("../routes/GoodDeliveryRouter");
 const ShipmentRouter = require("../routes/ShipmentRouter");
 const InventoryRouter = require("../routes/InventoryRouter");
+const SendMailRouter = require("../routes/SendMailRouter");
 
 const routes = (app) => {
   app.use("/user", UserRouter);
@@ -16,5 +17,6 @@ const routes = (app) => {
   app.use("/good", GoodDeliveriesRouter);
   app.use("/shipment", ShipmentRouter);
   app.use("/inventor", InventoryRouter);
+  app.use("/sendMail", SendMailRouter);
 };
 module.exports = routes;

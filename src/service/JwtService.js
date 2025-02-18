@@ -29,7 +29,7 @@ const refreshToken = (token) => {
 
         const access_token = await generralAccesToken({
           id: user.id,
-          isAdmin: user.isAdmin,
+          role: user.role,
         });
 
         resolve({

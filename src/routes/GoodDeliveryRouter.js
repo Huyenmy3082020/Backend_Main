@@ -9,11 +9,7 @@ const {
 
 const router = express.Router();
 
-router.post(
-  "/",
-  authenticateToken,
-  GoodsDeliveryController.createGoodsDelivery
-); // Cần admin
+router.post("/", GoodsDeliveryController.createGoodsDelivery); // Cần admin
 
 // Route lấy tất cả đơn giao hàng - không cần xác thực
 router.get("/getAll", GoodsDeliveryController.getAllGoodsDeliveries); // Không cần middleware

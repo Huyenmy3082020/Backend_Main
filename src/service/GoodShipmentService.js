@@ -2,83 +2,76 @@ const mongoose = require("mongoose");
 const GoodsShipment = require("../models/GoodShipmentModel");
 const Inventory = require("../models/InventoryModel");
 const Ingredient = require("../models/IngredientsModel");
+const { runProducer } = require("../rabbitmq/producer");
 
 async function createGoodsShipment(data) {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     let { userId, items, deliveryAddress } = data;
-
     console.log("Received data:", JSON.stringify(data, null, 2));
 
-    // Lấy thông tin kho hàng trước
-    const updatedItems = await Promise.all(
-      items.map(async (item) => {
-        if (!item.ingredientsId) {
-          throw new Error("ingredientsId is missing in one of the items");
-        }
+    const updatedItems = [];
+    const lowStockItems = []; // Mảng để lưu thông tin các sản phẩm tồn kho <= 5
 
-        console.log(`Processing ingredient ID: ${item.ingredientsId}`);
+    for (let item of items) {
+      if (!item.ingredientsId) {
+        throw new Error("ingredientsId is missing in one of the items");
+      }
 
-        // Lấy thông tin tồn kho
-        const inventoryItem = await Inventory.findOne({
+      const inventoryItem = await Inventory.findOne({
+        ingredientsId: item.ingredientsId,
+      }).session(session);
+
+      if (!inventoryItem) {
+        throw new Error(
+          `Ingredient with ID ${item.ingredientsId} not found in inventory`
+        );
+      }
+
+      if (inventoryItem.stock < item.quantity) {
+        throw new Error(`Not enough stock for item ${item.ingredientsId}`);
+      }
+
+      const ingredient = await Ingredient.findOne({
+        _id: item.ingredientsId,
+      }).session(session);
+
+      if (!ingredient) {
+        throw new Error(`Ingredient with ID ${item.ingredientsId} not found`);
+      }
+
+      // Cập nhật tồn kho
+      const updatedInventoryItem = await Inventory.findOneAndUpdate(
+        { ingredientsId: item.ingredientsId },
+        { $inc: { stock: -item.quantity } },
+        { session, new: true }
+      );
+
+      console.log("updatedInventoryItem", updatedInventoryItem);
+
+      // Nếu tồn kho <= 5, thêm sản phẩm vào mảng lowStockItems
+      if (updatedInventoryItem && updatedInventoryItem.stock <= 5) {
+        lowStockItems.push({
           ingredientsId: item.ingredientsId,
-        }).session(session);
+          ingredientName: ingredient.name,
+          remainingStock: updatedInventoryItem.stock,
+        });
+      }
 
-        console.log("Inventory item:", inventoryItem);
+      updatedItems.push({
+        ingredientsId: item.ingredientsId,
+        ingredientNameAtPurchase: ingredient.name,
+        quantity: item.quantity,
+        priceAtShipment: ingredient.price,
+      });
+    }
 
-        if (!inventoryItem) {
-          throw {
-            error: true,
-            message: `Nguyên liệu với ID ${item.ingredientsId} không tồn tại trong kho!`,
-          };
-        }
-
-        if (inventoryItem.stock < item.quantity) {
-          throw {
-            error: true,
-            message: `Không đủ hàng trong kho! (Cần: ${item.quantity}, Tồn: ${inventoryItem.stock})`,
-          };
-        }
-
-        // Lấy thông tin nguyên liệu
-        const ingredient = await Ingredient.findOne({
-          _id: item.ingredientsId,
-        }).session(session);
-
-        console.log("Ingredient data:", ingredient);
-
-        if (!ingredient) {
-          throw new Error(`Ingredient with ID ${item.ingredientsId} not found`);
-        }
-
-        // Lấy giá từ Ingredient thay vì Inventory
-        if (typeof ingredient.price !== "number" || isNaN(ingredient.price)) {
-          throw new Error(
-            `Invalid price for ingredient ID ${item.ingredientsId}. Price found: ${ingredient.price}`
-          );
-        }
-
-        return {
-          ingredientsId: item.ingredientsId,
-          ingredientNameAtPurchase: ingredient.name,
-          quantity: item.quantity,
-          priceAtShipment: ingredient.price, // Lấy giá từ bảng Ingredient
-        };
-      })
-    );
-
-    console.log("Updated items after processing:", updatedItems);
-
-    // Tính tổng tiền sau khi có thông tin
     const totalPrice = updatedItems.reduce(
       (sum, item) => sum + item.quantity * item.priceAtShipment,
       0
     );
 
-    console.log("Total price calculated:", totalPrice);
-
-    // Tạo đơn hàng xuất kho
     const goodsShipment = new GoodsShipment({
       userId,
       items: updatedItems,
@@ -86,35 +79,24 @@ async function createGoodsShipment(data) {
       deliveryAddress,
     });
 
-    console.log("Saving goods shipment:", goodsShipment);
-
     await goodsShipment.save({ session });
 
-    // Cập nhật tồn kho (giảm số lượng)
-    await Promise.all(
-      updatedItems.map(async (item) => {
-        console.log(`Updating stock for ingredient ID: ${item.ingredientsId}`);
+    // Log và gửi thông báo về các sản phẩm tồn kho <= 5 nếu có
+    if (lowStockItems.length > 0) {
+      console.log("Sending low stock notifications for items:", lowStockItems);
+      // Gửi thông báo cho tất cả các sản phẩm trong mảng
+      await runProducer(lowStockItems);
 
-        await Inventory.findOneAndUpdate(
-          { ingredientsId: item.ingredientsId },
-          { $inc: { stock: -item.quantity } },
-          { session, new: true }
-        );
+      // Log lại sau khi gửi thông báo
+      console.log("Low stock notification sent:", lowStockItems);
+    }
 
-        console.log(
-          `Stock updated for ingredient ID: ${item.ingredientsId}, reduced by: ${item.quantity}`
-        );
-      })
-    );
-
-    // Kiểm tra session còn tồn tại trước khi commit
     if (session.inTransaction()) {
       await session.commitTransaction();
     }
 
     console.log("Transaction committed successfully.");
-
-    return goodsShipment; // Trả về kết quả
+    return goodsShipment;
   } catch (error) {
     await session.abortTransaction();
     console.error("Error in createGoodsShipment:", error);

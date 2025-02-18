@@ -5,6 +5,7 @@ const authMiddleware = (req, res, next) => {
   // ✅ Lấy token từ cookie thay vì headers
   const token = req.cookies.access_token;
 
+  console.log("token", token);
   if (!token) {
     return res.status(401).json({
       mess: "Token xác thực không được cung cấp",
@@ -19,6 +20,7 @@ const authMiddleware = (req, res, next) => {
         status: "ERROR",
       });
     }
+    console.log(user?.role);
     if (user?.role === "admin") {
       next();
     } else {
