@@ -1,7 +1,6 @@
 const amqp = require("amqplib");
 
 async function runProducer(data) {
-  console.log(data);
   const queueName = "inventoryQueue"; // Hàng đợi chứa thông tin sản phẩm sắp hết
   try {
     const connection = await amqp.connect("amqp://localhost");
@@ -10,7 +9,6 @@ async function runProducer(data) {
 
     const message = JSON.stringify(data); // Dữ liệu là mảng các sản phẩm hết hàng
     channel.sendToQueue(queueName, Buffer.from(message));
-    console.log(`[x] Sent: ${message}`);
 
     await channel.close();
     await connection.close();

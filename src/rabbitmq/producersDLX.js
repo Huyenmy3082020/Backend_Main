@@ -27,7 +27,6 @@ const runProducer = async () => {
 
     // Gửi message
     const message = "a new product is";
-    console.log(message, "a new product is");
     channel.sendToQueue(queue.queue, Buffer.from(message), {
       persistent: true, // lưu message vào queue và disk
       expires: 10000, // message s�� hết hạn sau 10s

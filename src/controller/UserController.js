@@ -35,8 +35,6 @@ const createUser = async (req, res) => {
 
 const loginUserController = async (req, res) => {
   try {
-    console.log("🔥 Body nhận được:", req.body);
-
     const { email, password } = req.body;
 
     if (!email || !password) {
@@ -70,7 +68,8 @@ const loginUserController = async (req, res) => {
     return res.json({
       status: "OK",
       message: "Đăng nhập thành công",
-    }); // ❌ Không trả accessToken & refreshToken về response nữa
+      access_token: response.accessToken,
+    });
   } catch (error) {
     console.error("❌ Lỗi server:", error);
     return res.status(500).json({
@@ -138,21 +137,15 @@ const getAll = async (req, res) => {
 
 const getAllUserbyId = async (req, res) => {
   try {
-    console.log("🔥 Request nhận được:", req.headers);
-    console.log("🔥 Cookies:", req.cookies);
-    console.log("🔥 Token đã giải mã:", req.user);
-
     // ✅ Kiểm tra req.user có tồn tại không
     if (!req.user || !req.user.id) {
       return res.status(401).json({ status: "err", mess: "Unauthorized" });
     }
 
     const userId = req.user.id;
-    console.log("🔍 User ID từ token:", userId);
 
     // ✅ Gọi service lấy dữ liệu người dùng
     const response = await UserService.getAllUserById(userId);
-    console.log("📢 Kết quả từ UserService:", response);
 
     if (response.status === "ok") {
       return res.status(200).json(response);

@@ -36,10 +36,6 @@ mongoose
   .catch((err) => {
     console.error("❌ Lỗi kết nối MongoDB:", err);
   });
-app.use((req, res, next) => {
-  console.log("Cookies:", req.cookies);
-  next();
-});
 
 // Bắt đầu server
 app.listen(port, () => {

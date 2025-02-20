@@ -3,28 +3,24 @@ const GoodsDeliveryController = require("../controller/GoodDeliveriesController"
 
 const {
   authMiddleware,
-  authUserMiddleware,
   authenticateToken,
+  authenticateIsAdmin,
 } = require("../middleware/authmiddleware");
 
 const router = express.Router();
 
 router.post("/", GoodsDeliveryController.createGoodsDelivery); // Cần admin
 
-// Route lấy tất cả đơn giao hàng - không cần xác thực
 router.get("/getAll", GoodsDeliveryController.getAllGoodsDeliveries); // Không cần middleware
 
-// Route cần xác thực token cho phép người dùng chỉnh sửa và xóa dữ liệu
 router.put(
   "/:id",
-  authenticateToken,
-  authMiddleware,
+  authenticateIsAdmin,
   GoodsDeliveryController.updateGoodsDelivery
 ); // Cần authenticateToken
 router.delete(
   "/:id",
   authenticateToken,
-  authMiddleware,
   GoodsDeliveryController.deleteGoodsDelivery
 ); // Cần authenticateToken
 

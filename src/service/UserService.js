@@ -138,11 +138,7 @@ const getAll = async () => {
 
 const getAllUserById = async (userId) => {
   try {
-    console.log("🔎 Đang tìm user ID:", userId);
-
-    // ✅ Tìm user theo `id`
     const userData = await User.findById(userId);
-    console.log("✅ Dữ liệu user tìm thấy:", userData);
 
     if (!userData) {
       console.error("❌ Không tìm thấy người dùng!");

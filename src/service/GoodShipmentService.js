@@ -4,15 +4,16 @@ const Inventory = require("../models/InventoryModel");
 const Ingredient = require("../models/IngredientsModel");
 const { runProducer } = require("../rabbitmq/producer");
 
+const axios = require("axios");
+
 async function createGoodsShipment(data) {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
     let { userId, items, deliveryAddress } = data;
-    console.log("Received data:", JSON.stringify(data, null, 2));
 
     const updatedItems = [];
-    const lowStockItems = []; // Mảng để lưu thông tin các sản phẩm tồn kho <= 5
+    const lowStockItems = [];
 
     for (let item of items) {
       if (!item.ingredientsId) {
@@ -41,21 +42,24 @@ async function createGoodsShipment(data) {
         throw new Error(`Ingredient with ID ${item.ingredientsId} not found`);
       }
 
-      // Cập nhật tồn kho
       const updatedInventoryItem = await Inventory.findOneAndUpdate(
         { ingredientsId: item.ingredientsId },
         { $inc: { stock: -item.quantity } },
         { session, new: true }
       );
 
-      console.log("updatedInventoryItem", updatedInventoryItem);
-
-      // Nếu tồn kho <= 5, thêm sản phẩm vào mảng lowStockItems
       if (updatedInventoryItem && updatedInventoryItem.stock <= 5) {
         lowStockItems.push({
           ingredientsId: item.ingredientsId,
           ingredientName: ingredient.name,
           remainingStock: updatedInventoryItem.stock,
+        });
+
+        console.log("ingredients", ingredient);
+        await axios.post("http://localhost:2001/notification", {
+          name: ingredient.name,
+          message: `Số lượng còn lại: ${updatedInventoryItem.stock}`,
+          stock: updatedInventoryItem.stock,
         });
       }
 
@@ -81,29 +85,22 @@ async function createGoodsShipment(data) {
 
     await goodsShipment.save({ session });
 
-    // Log và gửi thông báo về các sản phẩm tồn kho <= 5 nếu có
     if (lowStockItems.length > 0) {
-      console.log("Sending low stock notifications for items:", lowStockItems);
-      // Gửi thông báo cho tất cả các sản phẩm trong mảng
       await runProducer(lowStockItems);
-
-      // Log lại sau khi gửi thông báo
-      console.log("Low stock notification sent:", lowStockItems);
     }
+
+    console.log("Success", lowStockItems);
 
     if (session.inTransaction()) {
       await session.commitTransaction();
     }
 
-    console.log("Transaction committed successfully.");
     return goodsShipment;
   } catch (error) {
     await session.abortTransaction();
-    console.error("Error in createGoodsShipment:", error);
     throw error;
   } finally {
     session.endSession();
-    console.log("Session ended.");
   }
 }
 

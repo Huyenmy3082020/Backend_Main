@@ -4,7 +4,6 @@ async function createGoodsShipment(req, res) {
     const goodsShipment = await GoodsShipmentService.createGoodsShipment(
       req.body
     );
-    console.log(req.body);
     res
       .status(201)
       .json({ message: "GoodsShipment created", data: goodsShipment });

@@ -9,17 +9,14 @@ const runProducer = async () => {
     const queueName = "sendMail";
 
     // Đảm bảo queue tồn tại
-    await channel.assertQueue(queueName, { durable: false });
+    await channel.assertQueue(queueName, { durable: true });
 
     // Gửi tin nhắn vào queue
     channel.sendToQueue(queueName, Buffer.from(message));
-    console.log(`[x] Sent '${message}'`);
 
     // Đóng kênh và kết nối
     await channel.close();
     await connection.close();
-
-    console.log("Message sent successfully");
   } catch (error) {
     console.error("Error in producer:", error);
   }

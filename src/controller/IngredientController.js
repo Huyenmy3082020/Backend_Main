@@ -7,7 +7,6 @@ exports.createIngredient = async (req, res) => {
   try {
     const { category, supplier, unit, name, price, description } = req.body;
 
-    console.log(req.body);
     // Tìm Category & Supplier từ database
     const categoryObj = await findCategoryByName(category);
     const supplierObj = await findSupplierByName(supplier);
