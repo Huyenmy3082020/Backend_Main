@@ -23,6 +23,14 @@ app.use(
     credentials: true,
   })
 );
+app.use(
+  cors({
+    origin:
+      "https://front-end-nmcnpm-final-e59xaqj11-huyenmy3082020s-projects.vercel.app",
+    credentials: true,
+  })
+);
+
 app.use(errorHandler);
 routes(app);
 
