@@ -5,6 +5,7 @@ const Ingredient = require("../models/IngredientsModel");
 const { runProducer } = require("../rabbitmq/producer");
 
 const axios = require("axios");
+const { sendToQueue } = require("../../config/rabbitmq");
 
 async function createGoodsShipment(data) {
   const session = await mongoose.startSession();
@@ -104,6 +105,61 @@ async function createGoodsShipment(data) {
   }
 }
 
+async function createGoodsShipmentRedis(data) {
+  try {
+    let { userId, items, deliveryAddress } = data;
+
+    const shipmentData = {
+      userId,
+      items: [],
+      deliveryAddress,
+    };
+
+    for (let item of items) {
+      if (!item.ingredientsId) {
+        throw new Error("ingredientsId is missing in one of the items");
+      }
+
+      const inventory = await Inventory.findOne({
+        ingredientsId: item.ingredientsId,
+      });
+
+      if (!inventory) {
+        throw new Error(
+          `❌ Nguyên liệu với ID ${item.ingredientsId} không tồn tại trong kho`
+        );
+      }
+
+      if (item.quantity > inventory.stock) {
+        throw new Error(
+          `❌ Số lượng đặt (${item.quantity}) lớn hơn số lượng tồn kho (${inventory.stock}) `
+        );
+      }
+
+      shipmentData.items.push({
+        ingredientsId: item.ingredientsId,
+        ingredientNameAtPurchase: inventory.ingredientName, // Lấy từ inventory
+        quantity: item.quantity,
+        priceAtShipment: inventory.price,
+      });
+    }
+
+    shipmentData.totalPrice = shipmentData.items.reduce(
+      (sum, item) => sum + item.quantity * item.priceAtShipment,
+      0
+    );
+
+    await sendToQueue("shipment_queue", shipmentData);
+    console.log("✅ Đơn hàng đã gửi vào hàng đợi:", shipmentData);
+
+    return { message: "Đơn hàng đang được xử lý!" };
+  } catch (error) {
+    console.error("❌ Lỗi khi tạo đơn hàng:", error.message);
+    throw error;
+  }
+}
+
 module.exports = {
   createGoodsShipment,
+  createGoodsShipmentRedis,
 };

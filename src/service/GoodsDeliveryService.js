@@ -3,6 +3,26 @@ const Inventory = require("../models/InventoryModel");
 const mongoose = require("mongoose");
 
 const Ingredient = require("../models/IngredientsModel");
+const { createClient } = require("redis");
+
+const redisClient = createClient({
+  socket: {
+    host: "127.0.0.1",
+    port: 6379,
+  },
+});
+
+redisClient.connect().then(() => console.log("✅ Redis connected!"));
+
+async function updateInventoryInRedis(ingredientsId, stock) {
+  const key = `stock:product_${ingredientsId}`;
+  if (!isNaN(stock)) {
+    await redisClient.set(key, stock);
+    console.log(`🔄 Cập nhật Redis: ${key} ->`, stock);
+  } else {
+    console.log(`⚠️ Dữ liệu không hợp lệ cho sản phẩm ${ingredientsId}`);
+  }
+}
 
 async function createGoodsDelivery(data) {
   const session = await mongoose.startSession();
@@ -47,11 +67,30 @@ async function createGoodsDelivery(data) {
     await goodsDelivery.save({ session });
 
     for (const item of updatedItems) {
-      await Inventory.findOneAndUpdate(
-        { ingredientsId: item.ingredientsId },
-        { $inc: { stock: item.quantity } },
-        { upsert: true, new: true, session }
-      );
+      let updatedInventory = await Inventory.findOne({
+        ingredientsId: item.ingredientsId,
+      }).session(session);
+
+      if (!updatedInventory) {
+        updatedInventory = new Inventory({
+          ingredientsId: item.ingredientsId,
+          stock: 0,
+          status: "không có dữ liệu",
+        });
+
+        await updatedInventory.save({ session });
+
+        console.log(
+          `🆕 Thêm mới Inventory cho sản phẩm ${item.ingredientsId} với stock = 0`
+        );
+      }
+
+      // Cập nhật stock trong MongoDB
+      updatedInventory.stock += item.quantity;
+      await updatedInventory.save({ session });
+
+      // 🔥 Cập nhật Redis ngay sau khi cập nhật MongoDB
+      await updateInventoryInRedis(item.ingredientsId, updatedInventory.stock);
     }
 
     await session.commitTransaction();
@@ -61,7 +100,7 @@ async function createGoodsDelivery(data) {
   } catch (error) {
     await session.abortTransaction();
     session.endSession();
-    console.error("Error in createGoodsDelivery:", error);
+    console.error("❌ Lỗi khi nhập hàng:", error);
     throw error;
   }
 }

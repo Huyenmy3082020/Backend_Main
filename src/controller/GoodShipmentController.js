@@ -11,6 +11,20 @@ async function createGoodsShipment(req, res) {
     res.status(400).json({ message: error.message });
   }
 }
+async function createGoodsShipmentRedis(req, res) {
+  try {
+    const goodsShipment = await GoodsShipmentService.createGoodsShipmentRedis(
+      req.body
+    );
+    res
+      .status(201)
+      .json({ message: "GoodsShipment created", data: goodsShipment });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
 module.exports = {
   createGoodsShipment,
+  createGoodsShipmentRedis,
 };

@@ -13,6 +13,9 @@ app.use(express.json());
 app.use(bodyParser.json());
 app.use(cookieParser());
 const errorHandler = require("./middleware/errorHandler");
+const connectDB = require("../config/mongodb");
+const startRedisSync = require("./sync/syncdb");
+startRedisSync();
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
@@ -26,18 +29,7 @@ routes(app);
 app.get("/", (req, res) => {
   res.send("Hello, Express!");
 });
-mongoose
-  .connect(
-    `mongodb+srv://hatuan:Hatuan12345%40@cluster0.eocii.mongodb.net/test?retryWrites=true&w=majority&appName=Cluster0`
-  )
-  .then(() => {
-    console.log("✅ Kết nối MongoDB thành công!");
-  })
-  .catch((err) => {
-    console.error("❌ Lỗi kết nối MongoDB:", err);
-  });
-
-// Bắt đầu server
+connectDB();
 app.listen(port, () => {
   console.log(`Server is running at http://localhost:${port}`);
 });

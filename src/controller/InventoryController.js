@@ -41,9 +41,19 @@ async function deleteInventory(req, res) {
   }
 }
 
+async function getAll(req, res) {
+  try {
+    const data = await InventoryService.getAllInventoryWithIngredients();
+    res.status(200).json({ data });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
+
 module.exports = {
   createInventory,
   getInventory,
   updateInventory,
   deleteInventory,
+  getAll,
 };

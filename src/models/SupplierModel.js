@@ -1,6 +1,6 @@
 const mongoose = require("mongoose");
 
-const supperlierSchema = new mongoose.Schema(
+const supplierSchema = new mongoose.Schema(
   {
     name: { type: String, required: true, unique: true },
     contact: { type: String, required: true },
@@ -10,4 +10,4 @@ const supperlierSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Suppelier", supperlierSchema);
+module.exports = mongoose.model("Supplier", supplierSchema);
