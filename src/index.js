@@ -19,14 +19,10 @@ startRedisSync();
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
-    origin: "http://localhost:7000",
-    credentials: true,
-  })
-);
-app.use(
-  cors({
-    origin:
+    origin: [
+      "http://localhost:7000",
       "https://front-end-nmcnpm-final-e59xaqj11-huyenmy3082020s-projects.vercel.app",
+    ],
     credentials: true,
   })
 );
