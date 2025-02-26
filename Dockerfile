@@ -13,4 +13,4 @@ COPY . .
 EXPOSE 3000
 
 # Chạy server.js từ thư mục src
-CMD ["node", "src/server.js"]
+CMD ["node", "src/index.js"]

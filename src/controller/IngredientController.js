@@ -1,3 +1,4 @@
+"use strict";
 const IngredientService = require("../service/InService");
 const { findCategoryByName } = require("./repository/categoryRepository");
 const { findSupplierByName } = require("./repository/supplierRepository");
@@ -7,10 +8,55 @@ exports.createIngredient = async (req, res) => {
   try {
     const { category, supplier, unit, name, price, description } = req.body;
 
-    // Tìm Category & Supplier từ database
     const categoryObj = await findCategoryByName(category);
     const supplierObj = await findSupplierByName(supplier);
 
+    if (!categoryObj || !supplierObj) {
+      return res.status(400).json({
+        success: false,
+        message: "Không tìm thấy danh mục hoặc nhà cung cấp!",
+      });
+    }
+
+    const categoryId = categoryObj._id.toString();
+    const supplierId = supplierObj._id.toString();
+
+    const newIngredient = await IngredientService.createIngredient({
+      categoryId,
+      supplierId,
+      name,
+      price,
+      unit,
+      description,
+    });
+
+    res.status(201).json({
+      success: true,
+      message: "Thêm thành công!",
+      ingredient: newIngredient,
+    });
+  } catch (error) {
+    console.error("Lỗi:", error);
+    res.status(500).json({
+      success: false,
+      message: "Lỗi khi thêm nguyên liệu!",
+      error: error.message,
+    });
+  }
+};
+
+exports.createIngredientElastisearch = async (req, res) => {
+  try {
+    const { category, supplier, unit, name, price, description } = req.body;
+
+    console.log("category", category);
+    console.log("supplier", supplier);
+
+    const categoryObj = await findCategoryByName(category);
+    const supplierObj = await findSupplierByName(supplier);
+
+    console.log("categoryObj", categoryObj);
+    console.log("supplierObj", supplierObj);
     if (!categoryObj || !supplierObj) {
       return res.status(400).json({
         success: false,
@@ -23,14 +69,16 @@ exports.createIngredient = async (req, res) => {
     const supplierId = supplierObj._id.toString();
 
     // Gọi service để tạo nguyên liệu
-    const newIngredient = await IngredientService.createIngredient({
-      categoryId,
-      supplierId,
-      name,
-      price,
-      unit,
-      description,
-    });
+    const newIngredient = await IngredientService.createIngredientElasticsearch(
+      {
+        categoryId,
+        supplierId,
+        name,
+        price,
+        unit,
+        description,
+      }
+    );
 
     res.status(201).json({
       success: true,
@@ -61,7 +109,6 @@ exports.getAllIngredients = async (req, res) => {
   }
 };
 
-// 🟡 Lấy một Ingredient theo ID
 exports.getIngredientById = async (req, res) => {
   try {
     const ingredient = await IngredientService.getIngredientById(req.params.id);
@@ -80,7 +127,6 @@ exports.getIngredientById = async (req, res) => {
   }
 };
 
-// 🟠 Cập nhật Ingredient
 exports.updateIngredient = async (req, res) => {
   try {
     const updatedIngredient = await IngredientService.updateIngredient(
@@ -106,7 +152,6 @@ exports.updateIngredient = async (req, res) => {
   }
 };
 
-// 🔴 Xóa Ingredient
 exports.deleteIngredient = async (req, res) => {
   try {
     const deletedIngredient = await IngredientService.deleteIngredient(
@@ -122,5 +167,15 @@ exports.deleteIngredient = async (req, res) => {
     res
       .status(500)
       .json({ success: false, message: "Lỗi khi xóa!", error: error.message });
+  }
+};
+exports.searchIngredients = async (req, res) => {
+  try {
+    const { searchQuery } = req.query;
+    const ingredients = await IngredientService.searchIngredients(searchQuery);
+    res.status(200).json({ success: true, ingredients });
+  } catch (err) {
+    console.error("L��i:", err);
+    res.status(500).json({ success: false, message: "L��i khi tìm kiếm!" });
   }
 };

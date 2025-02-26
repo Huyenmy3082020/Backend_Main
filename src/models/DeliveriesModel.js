@@ -42,6 +42,11 @@ const goodsDeliverySchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    status: {
+      type: String,
+      enum: ["Pending", "Created"],
+      default: "CREATED",
+    },
   },
   { timestamps: true }
 );

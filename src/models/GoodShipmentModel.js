@@ -18,7 +18,7 @@ const goodsShipmentSchema = new mongoose.Schema(
           min: 1,
           required: true,
         },
-        priceAtShipment: {
+        priceAtPurchase: {
           type: Number,
           required: true,
         },
@@ -37,6 +37,11 @@ const goodsShipmentSchema = new mongoose.Schema(
       type: Date,
       required: true,
       default: Date.now,
+    },
+    status: {
+      type: String,
+      enum: ["Pending", "Shipped", "Delivered", "Cancelled"],
+      default: "Pending",
     },
   },
   { timestamps: true }

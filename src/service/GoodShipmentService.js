@@ -55,13 +55,6 @@ async function createGoodsShipment(data) {
           ingredientName: ingredient.name,
           remainingStock: updatedInventoryItem.stock,
         });
-
-        console.log("ingredients", ingredient);
-        await axios.post("http://localhost:2001/notification", {
-          name: ingredient.name,
-          message: `Số lượng còn lại: ${updatedInventoryItem.stock}`,
-          stock: updatedInventoryItem.stock,
-        });
       }
 
       updatedItems.push({
@@ -109,12 +102,6 @@ async function createGoodsShipmentRedis(data) {
   try {
     let { userId, items, deliveryAddress } = data;
 
-    const shipmentData = {
-      userId,
-      items: [],
-      deliveryAddress,
-    };
-
     for (let item of items) {
       if (!item.ingredientsId) {
         throw new Error("ingredientsId is missing in one of the items");
@@ -135,31 +122,34 @@ async function createGoodsShipmentRedis(data) {
           `❌ Số lượng đặt (${item.quantity}) lớn hơn số lượng tồn kho (${inventory.stock}) `
         );
       }
-
-      shipmentData.items.push({
-        ingredientsId: item.ingredientsId,
-        ingredientNameAtPurchase: inventory.ingredientName, // Lấy từ inventory
-        quantity: item.quantity,
-        priceAtShipment: inventory.price,
-      });
     }
 
-    shipmentData.totalPrice = shipmentData.items.reduce(
-      (sum, item) => sum + item.quantity * item.priceAtShipment,
-      0
-    );
+    const newShipment = new GoodsShipment(data);
+    await newShipment.save();
 
-    await sendToQueue("shipment_queue", shipmentData);
-    console.log("✅ Đơn hàng đã gửi vào hàng đợi:", shipmentData);
+    console.log("✅ Đơn hàng đã lưu vào database:", newShipment);
 
-    return { message: "Đơn hàng đang được xử lý!" };
+    await sendToQueue("shipment_queue", newShipment);
+    console.log("✅ Đơn hàng đã gửi vào hàng đợi:", newShipment);
+
+    return {
+      message: "Đơn hàng đang được xử lý!",
+      shipmentId: newShipment._id,
+    };
   } catch (error) {
     console.error("❌ Lỗi khi tạo đơn hàng:", error.message);
     throw error;
   }
 }
 
+async function getAllShipment() {
+  try {
+    const shipment = await GoodsShipment.find();
+    return shipment;
+  } catch (error) {}
+}
 module.exports = {
   createGoodsShipment,
   createGoodsShipmentRedis,
+  getAllShipment,
 };

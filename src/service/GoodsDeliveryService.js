@@ -45,9 +45,9 @@ async function createGoodsDelivery(data) {
 
         return {
           ingredientsId: ingredient._id,
-          ingredientNameAtPurchase: ingredient.name, // Lưu tên nguyên liệu
+          ingredientNameAtPurchase: ingredient.name,
           quantity: item.quantity,
-          priceAtPurchase: ingredient.price, // Lưu giá tại thời điểm nhập
+          priceAtPurchase: ingredient.price,
         };
       })
     );
@@ -62,6 +62,7 @@ async function createGoodsDelivery(data) {
       items: updatedItems,
       totalPrice,
       deliveryAddress,
+      status: "Pending",
     });
 
     await goodsDelivery.save({ session });
@@ -85,16 +86,28 @@ async function createGoodsDelivery(data) {
         );
       }
 
-      // Cập nhật stock trong MongoDB
       updatedInventory.stock += item.quantity;
       await updatedInventory.save({ session });
 
-      // 🔥 Cập nhật Redis ngay sau khi cập nhật MongoDB
       await updateInventoryInRedis(item.ingredientsId, updatedInventory.stock);
     }
 
     await session.commitTransaction();
     session.endSession();
+
+    // ✅ Đặt setTimeout sau 3 phút để cập nhật trạng thái thành "Delivered"
+    setTimeout(async () => {
+      try {
+        await GoodsDelivery.findByIdAndUpdate(goodsDelivery._id, {
+          status: "CREATED",
+        });
+      } catch (error) {
+        console.error(
+          `❌ Lỗi cập nhật trạng thái phiếu nhập ${goodsDelivery._id}:`,
+          error
+        );
+      }
+    }, 180000);
 
     return goodsDelivery;
   } catch (error) {
@@ -207,10 +220,10 @@ async function getAllGoodsDeliveries() {
   return await GoodsDelivery.find()
     .populate({
       path: "items.ingredientsId",
-      select: "name price _id", // Lấy các thông tin cần thiết từ Ingredient
+      select: "name price _id",
     })
-    .populate("userId") // Populate thông tin user nếu cần
-    .select("items quantity totalPrice deliveryDate deliveryAddress");
+    .populate("userId")
+    .select("items quantity totalPrice deliveryDate deliveryAddress status");
 }
 async function createGoodsShipment(data) {
   const session = await mongoose.startSession();

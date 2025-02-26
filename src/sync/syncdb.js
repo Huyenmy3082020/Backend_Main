@@ -77,8 +77,8 @@ async function startRedisSync() {
   console.log("✅ Redis connected!");
 
   // Đồng bộ hai chiều định kỳ
-  setInterval(syncRedisToMongo, 600000); // Mỗi 60 giây đồng bộ từ Redis -> MongoDB
-  setInterval(syncMongoToRedis, 600000); // Mỗi 60 giây đồng bộ từ MongoDB -> Redis
+  setInterval(syncRedisToMongo, 15000000); // Mỗi 60 giây đồng bộ từ Redis -> MongoDB
+  setInterval(syncMongoToRedis, 15000000); // Mỗi 60 giây đồng bộ từ MongoDB -> Redis
 }
 
 module.exports = startRedisSync;
