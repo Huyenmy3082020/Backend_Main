@@ -3,9 +3,11 @@ const amqp = require("amqplib");
 let channel;
 let connection;
 
+const amqp = require("amqplib");
+
 async function connectRabbitMQ() {
   if (!connection) {
-    connection = await amqp.connect("amqp://localhost");
+    connection = await amqp.connect("amqp://72.31.94.59"); // Thay bằng IP thật
     channel = await connection.createChannel();
   }
 }
