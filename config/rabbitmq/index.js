@@ -7,7 +7,7 @@ const amqp = require("amqplib");
 
 async function connectRabbitMQ() {
   if (!connection) {
-    connection = await amqp.connect("amqp://72.31.94.59"); // Thay bằng IP thật
+    connection = await amqp.connect("amqp://18.212.168.133"); // Thay bằng IP public của EC2
     channel = await connection.createChannel();
   }
 }
