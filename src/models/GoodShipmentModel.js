@@ -38,6 +38,10 @@ const goodsShipmentSchema = new mongoose.Schema(
       required: true,
       default: Date.now,
     },
+    supplierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Supplier",
+    },
     status: {
       type: String,
       enum: ["Pending", "Shipped", "Delivered", "Cancelled"],

@@ -5,6 +5,10 @@ const mongoose = require("mongoose");
 const Ingredient = require("../models/IngredientsModel");
 const { createClient } = require("redis");
 
+const {
+  findSupplierByName,
+} = require("../controller/repository/supplierRepository");
+
 const redisClient = createClient({
   socket: {
     host: "127.0.0.1",
@@ -23,24 +27,46 @@ async function updateInventoryInRedis(ingredientsId, stock) {
     console.log(`⚠️ Dữ liệu không hợp lệ cho sản phẩm ${ingredientsId}`);
   }
 }
+async function withRetry(fn, retries = 3, delay = 500) {
+  for (let i = 0; i < retries; i++) {
+    try {
+      return await fn();
+    } catch (error) {
+      if (error.codeName === "WriteConflict" && i < retries - 1) {
+        console.warn(`⚠️ Gặp lỗi WriteConflict, thử lại lần ${i + 1}...`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      } else {
+        throw error;
+      }
+    }
+  }
+}
 
 async function createGoodsDelivery(data) {
+  console.log("📥 Nhận yêu cầu nhập hàng:", data);
   const session = await mongoose.startSession();
-  session.startTransaction();
+
   try {
-    let { userId, items, deliveryAddress } = data;
+    let { userId, items, supplierName, deliveryAddress, totalPrice } = data;
+
+    const supplierId = await findSupplierByName(supplierName);
+
+    session.startTransaction();
 
     const updatedItems = await Promise.all(
       items.map(async (item) => {
         if (!item.ingredientsId) {
-          throw new Error("ingredientsId is missing in one of the items");
+          throw new Error(
+            `Thiếu ingredientsId ở sản phẩm: ${JSON.stringify(item)}`
+          );
         }
 
-        const ingredient = await Ingredient.findById(
-          item.ingredientsId
-        ).session(session);
+        const ingredient = await Ingredient.findById(item.ingredientsId);
+
         if (!ingredient) {
-          throw new Error(`Ingredient with ID ${item.ingredientsId} not found`);
+          throw new Error(
+            `Không tìm thấy nguyên liệu có ID: ${item.ingredientsId}`
+          );
         }
 
         return {
@@ -48,29 +74,36 @@ async function createGoodsDelivery(data) {
           ingredientNameAtPurchase: ingredient.name,
           quantity: item.quantity,
           priceAtPurchase: ingredient.price,
+          supplierId,
         };
       })
-    );
-
-    const totalPrice = updatedItems.reduce(
-      (sum, item) => sum + item.quantity * item.priceAtPurchase,
-      0
     );
 
     const goodsDelivery = new GoodsDelivery({
       userId,
       items: updatedItems,
       totalPrice,
+      supplierId,
       deliveryAddress,
+      totalPrice: totalPrice,
       status: "Pending",
     });
 
-    await goodsDelivery.save({ session });
+    await withRetry(async () => {
+      await goodsDelivery.save({ session });
+    });
 
+    // ✅ Commit transaction
+    await session.commitTransaction();
+    session.endSession();
+
+    console.log("✅ Phiếu nhập hàng tạo thành công:", goodsDelivery._id);
+
+    // 🔄 Cập nhật kho (ngoài transaction để tránh xung đột)
     for (const item of updatedItems) {
       let updatedInventory = await Inventory.findOne({
         ingredientsId: item.ingredientsId,
-      }).session(session);
+      });
 
       if (!updatedInventory) {
         updatedInventory = new Inventory({
@@ -79,39 +112,25 @@ async function createGoodsDelivery(data) {
           status: "không có dữ liệu",
         });
 
-        await updatedInventory.save({ session });
-
+        await updatedInventory.save();
         console.log(
           `🆕 Thêm mới Inventory cho sản phẩm ${item.ingredientsId} với stock = 0`
         );
       }
 
       updatedInventory.stock += item.quantity;
-      await updatedInventory.save({ session });
+      await updatedInventory.save();
 
+      // 🔄 Cập nhật cache
       await updateInventoryInRedis(item.ingredientsId, updatedInventory.stock);
     }
 
-    await session.commitTransaction();
-    session.endSession();
-
-    // ✅ Đặt setTimeout sau 3 phút để cập nhật trạng thái thành "Delivered"
-    setTimeout(async () => {
-      try {
-        await GoodsDelivery.findByIdAndUpdate(goodsDelivery._id, {
-          status: "CREATED",
-        });
-      } catch (error) {
-        console.error(
-          `❌ Lỗi cập nhật trạng thái phiếu nhập ${goodsDelivery._id}:`,
-          error
-        );
-      }
-    }, 180000);
-
     return goodsDelivery;
   } catch (error) {
-    await session.abortTransaction();
+    // ❌ Nếu có lỗi, rollback transaction
+    if (session.inTransaction()) {
+      await session.abortTransaction();
+    }
     session.endSession();
     console.error("❌ Lỗi khi nhập hàng:", error);
     throw error;
@@ -222,9 +241,13 @@ async function getAllGoodsDeliveries() {
       path: "items.ingredientsId",
       select: "name price _id",
     })
-    .populate("userId")
-    .select("items quantity totalPrice deliveryDate deliveryAddress status");
+    .populate({
+      path: "supplierId",
+      select: "name",
+    })
+    .select("items quantity totalPrice deliveryDate status");
 }
+
 async function createGoodsShipment(data) {
   const session = await mongoose.startSession();
   session.startTransaction();

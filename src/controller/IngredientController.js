@@ -47,32 +47,22 @@ exports.createIngredient = async (req, res) => {
 
 exports.createIngredientElastisearch = async (req, res) => {
   try {
-    const { category, supplier, unit, name, price, description } = req.body;
-
-    console.log("category", category);
-    console.log("supplier", supplier);
+    const { category, unit, name, price, description } = req.body;
 
     const categoryObj = await findCategoryByName(category);
-    const supplierObj = await findSupplierByName(supplier);
 
-    console.log("categoryObj", categoryObj);
-    console.log("supplierObj", supplierObj);
-    if (!categoryObj || !supplierObj) {
+    if (!categoryObj) {
       return res.status(400).json({
         success: false,
-        message: "Không tìm thấy danh mục hoặc nhà cung cấp!",
+        message: "Không tìm thấy danh mục",
       });
     }
 
-    // Lấy _id dưới dạng string
     const categoryId = categoryObj._id.toString();
-    const supplierId = supplierObj._id.toString();
 
-    // Gọi service để tạo nguyên liệu
     const newIngredient = await IngredientService.createIngredientElasticsearch(
       {
         categoryId,
-        supplierId,
         name,
         price,
         unit,

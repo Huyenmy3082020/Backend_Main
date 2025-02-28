@@ -75,6 +75,8 @@ async function deleteInventory(inventoryId) {
 async function getAllInventoryWithIngredients() {
   try {
     const data = await Ingredient.aggregate([
+      { $match: { isDeleted: false } }, // Chỉ lấy nguyên liệu chưa bị xóa
+
       {
         $lookup: {
           from: "inventories",
@@ -84,14 +86,72 @@ async function getAllInventoryWithIngredients() {
         },
       },
       {
+        $lookup: {
+          from: "categories",
+          let: { categoryId: "$categoryId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$_id", "$$categoryId"] },
+                    { $eq: ["$isDeleted", false] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "categoryData",
+        },
+      },
+      {
+        $lookup: {
+          from: "suppliers",
+          let: { supplierId: "$supplierId" },
+          pipeline: [
+            {
+              $match: {
+                $expr: {
+                  $and: [
+                    { $eq: ["$_id", "$$supplierId"] },
+                    { $eq: ["$isDeleted", false] },
+                  ],
+                },
+              },
+            },
+          ],
+          as: "supplierData",
+        },
+      },
+      {
         $addFields: {
+          category: { $arrayElemAt: ["$categoryData", 0] }, // Lấy object đầu tiên của category
           totalStock: {
-            $ifNull: [{ $sum: "$inventoryData.stock" }, 0],
+            $ifNull: [
+              {
+                $reduce: {
+                  input: "$inventoryData",
+                  initialValue: 0,
+                  in: { $add: ["$$value", "$$this.stock"] },
+                },
+              },
+              0,
+            ],
           },
           statusList: {
             $cond: {
               if: { $gt: [{ $size: "$inventoryData" }, 0] },
-              then: { $setUnion: ["$inventoryData.status"] },
+              then: {
+                $setUnion: [
+                  {
+                    $map: {
+                      input: "$inventoryData",
+                      as: "inv",
+                      in: "$$inv.status",
+                    },
+                  },
+                ],
+              },
               else: ["Không có dữ liệu"],
             },
           },
@@ -109,6 +169,8 @@ async function getAllInventoryWithIngredients() {
           supplierId: 1,
           totalStock: 1,
           statusList: 1,
+          "category.name": 1, // Lấy tên danh mục
+          "supplierData.name": 1, // Lấy danh sách tên nhà cung cấp
         },
       },
     ]);

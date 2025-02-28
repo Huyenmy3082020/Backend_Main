@@ -40,25 +40,22 @@ async function syncRedisToMongo() {
   }
 }
 
-// ✅ Hàm đồng bộ từ MongoDB vào Redis (kể cả sản phẩm chưa nhập hàng)
 async function syncMongoToRedis() {
   try {
     console.log("🔄 Đang đồng bộ dữ liệu từ MongoDB vào Redis...");
 
-    const inventories = await Inventory.find({});
+    const inventories = await Inventory.find({ isDeleted: false });
 
     for (const item of inventories) {
       const key = `stock:product_${item.ingredientsId}`;
       let existingStock = await redisClient.get(key);
 
-      // Nếu sản phẩm chưa có trong Redis, gán tồn kho = 0
       if (existingStock === null) {
         await redisClient.set(key, 0);
         console.log(
           `⚠️ Sản phẩm mới ${item.ingredientsId} chưa nhập hàng, đặt tồn kho = 0`
         );
       } else {
-        // Nếu có rồi, cập nhật tồn kho theo MongoDB
         await redisClient.set(key, item.stock);
         console.log(
           `✅ Cập nhật ${item.ingredientsId}: ${item.stock} vào Redis`
@@ -76,9 +73,8 @@ async function startRedisSync() {
   await redisClient.connect();
   console.log("✅ Redis connected!");
 
-  // Đồng bộ hai chiều định kỳ
-  setInterval(syncRedisToMongo, 15000000); // Mỗi 60 giây đồng bộ từ Redis -> MongoDB
-  setInterval(syncMongoToRedis, 15000000); // Mỗi 60 giây đồng bộ từ MongoDB -> Redis
+  setInterval(syncRedisToMongo, 1500000);
+  setInterval(syncMongoToRedis, 150000);
 }
 
 module.exports = startRedisSync;

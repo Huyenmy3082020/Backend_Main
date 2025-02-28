@@ -15,13 +15,12 @@ const inventorySchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["in-stock", "out-of-stock", "không có dữ liệu"],
-      default: "in-stock",
+      default: "out-of-stock",
     },
   },
   { timestamps: true }
 );
 
-// ✅ Hàm cập nhật trạng thái dựa vào `stock`
 function updateStatus(next) {
   if (this.stock !== undefined) {
     this.status = this.stock > 0 ? "in-stock" : "out-of-stock";

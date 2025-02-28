@@ -42,6 +42,11 @@ const goodsDeliverySchema = new mongoose.Schema(
       type: String,
       trim: true,
     },
+    supplierId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Supplier",
+      required: true,
+    },
     status: {
       type: String,
       enum: ["Pending", "Created"],

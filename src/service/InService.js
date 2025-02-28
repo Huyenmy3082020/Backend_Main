@@ -86,7 +86,6 @@ const updateIngredient = async (id, data) => {
 };
 
 const deleteIngredient = async (id) => {
-  deleteIngredientFromElasticsearch(id);
   return await Ingredient.findByIdAndUpdate(
     id,
     { isDeleted: true },

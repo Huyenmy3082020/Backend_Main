@@ -66,6 +66,7 @@ const updateIngredientInElasticsearch = async (id, updatedData) => {
 
 // 🔹 4. Xóa sản phẩm
 const deleteIngredientFromElasticsearch = async (id) => {
+  console.log("Id", id);
   await esClient.delete({
     index: indexName,
     id,

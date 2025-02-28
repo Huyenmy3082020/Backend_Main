@@ -3,8 +3,7 @@ const mongoose = require("mongoose");
 const ingredientSchema = new mongoose.Schema(
   {
     categoryId: { type: mongoose.Schema.Types.ObjectId, ref: "Category" },
-    supplierId: { type: mongoose.Schema.Types.ObjectId, ref: "Supplier" },
-    name: { type: String, required: true, unique: true },
+    name: { type: String, required: true },
     price: { type: Number, required: true },
     unit: {
       type: String,
