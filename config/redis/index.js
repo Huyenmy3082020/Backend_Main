@@ -1,7 +1,7 @@
 const redis = require("redis");
 
 const redisClient = redis.createClient({
-  host: "localhost", // Đổi thành localhost
+  host: "redis", // Đổi thành localhost
   port: 6379, // Cổng mặc định của Redis
 });
 

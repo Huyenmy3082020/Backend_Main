@@ -2,7 +2,7 @@ const amqp = require("amqplib");
 
 const runProducer = async () => {
   try {
-    const connection = await amqp.connect("amqp://localhost");
+    const connection = await amqp.connect("amqp://rabbitmq");
     const channel = await connection.createChannel();
 
     // exchange chính
