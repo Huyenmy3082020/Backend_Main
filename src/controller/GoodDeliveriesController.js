@@ -14,6 +14,7 @@ async function createGoodsDelivery(req, res) {
     const goodsDelivery = await GoodsDeliveryService.createGoodsDelivery(
       req.body
     );
+
     res
       .status(201)
       .json({ message: "GoodsDelivery created", data: goodsDelivery });
@@ -21,7 +22,18 @@ async function createGoodsDelivery(req, res) {
     res.status(400).json({ message: error.message });
   }
 }
-
+async function createGoodsDeliveryV1(req, res) {
+  try {
+    const goodsDelivery = await GoodsDeliveryService.createGoodsDeliveryV1(
+      req.body
+    );
+    res
+      .status(201)
+      .json({ message: "GoodsDelivery created", data: goodsDelivery });
+  } catch (error) {
+    res.status(400).json({ message: error.message });
+  }
+}
 async function updateGoodsDelivery(req, res) {
   try {
     const { id } = req.params;
@@ -63,5 +75,6 @@ module.exports = {
   updateGoodsDelivery,
   deleteGoodsDelivery,
   getAllGoodsDeliveries,
+  createGoodsDeliveryV1,
   createGoodsShipment,
 };

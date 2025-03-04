@@ -50,7 +50,7 @@ const goodsDeliverySchema = new mongoose.Schema(
     status: {
       type: String,
       enum: ["Pending", "Created"],
-      default: "CREATED",
+      default: "Pending",
     },
   },
   { timestamps: true }

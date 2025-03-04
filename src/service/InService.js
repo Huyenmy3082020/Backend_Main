@@ -1,12 +1,12 @@
 const Ingredient = require("../models/IngredientsModel");
+const Inventory = require("../models/InventoryModel");
 const { Client } = require("@elastic/elasticsearch");
 const {
   updateIngredientInElasticsearch,
   createIndexIfNotExists,
   deleteIngredientFromElasticsearch,
 } = require("./ingredientSync");
-
-const esClient = new Client({ node: "http://localhost:9200" });
+const { esClient } = require("../../config/elasticsearch");
 
 const searchIngredients = async (searchQuery) => {
   try {
@@ -55,14 +55,15 @@ const createIngredientElasticsearch = async (data) => {
     id: newIngredient._id.toString(),
     body: {
       categoryId: newIngredient.categoryId?.toString(),
-      supplierId: newIngredient.supplierId?.toString(),
       name: newIngredient.name,
       price: newIngredient.price,
       unit: newIngredient.unit,
       description: newIngredient.description,
-      updatedAt: newIngredient.updatedAt,
       status: newIngredient.status,
-      isDeleted: newIngredient.isDeleted,
+      supplierData: newIngredient.supplierData || [],
+      totalStock: newIngredient.totalStock || 0,
+      statusList: newIngredient.statusList || [],
+      updatedAt: new Date().toISOString(),
     },
   });
 
@@ -81,11 +82,14 @@ const getIngredientById = async (id) => {
 };
 
 const updateIngredient = async (id, data) => {
-  updateIngredientInElasticsearch(id, data);
   return await Ingredient.findByIdAndUpdate(id, data, { new: true });
 };
 
 const deleteIngredient = async (id) => {
+  const inventory = await Inventory.find({ ingredientsId: id });
+  if (inventory.length > 0) {
+    throw new Error("Nguyên liệu này đang được sử dụng trong kho");
+  }
   return await Ingredient.findByIdAndUpdate(
     id,
     { isDeleted: true },

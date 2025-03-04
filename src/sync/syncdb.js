@@ -1,16 +1,7 @@
 const mongoose = require("mongoose");
 const { createClient } = require("redis");
 const Inventory = require("../models/InventoryModel"); // Import model Inventory
-
-// Kết nối Redis
-const redisClient = createClient({
-  socket: {
-    host: "127.0.0.1",
-    port: 6379,
-  },
-});
-
-redisClient.on("error", (err) => console.error("❌ Redis error:", err));
+const redisClient = require("../../config/redis");
 
 async function syncRedisToMongo() {
   try {
@@ -70,7 +61,6 @@ async function syncMongoToRedis() {
 }
 
 async function startRedisSync() {
-  await redisClient.connect();
   console.log("✅ Redis connected!");
 
   setInterval(syncRedisToMongo, 1500000);

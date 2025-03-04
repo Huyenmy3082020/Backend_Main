@@ -9,19 +9,32 @@ const {
 
 const router = express.Router();
 
-router.post("/", GoodsDeliveryController.createGoodsDelivery); // Cần admin
-
-router.get("/getAll", GoodsDeliveryController.getAllGoodsDeliveries); // Không cần middleware
+router.post(
+  "/",
+  authenticateIsAdmin,
+  GoodsDeliveryController.createGoodsDelivery
+);
+// v1 la chi xac nhan don hang thoi
+router.post(
+  "/v1",
+  authenticateToken,
+  GoodsDeliveryController.createGoodsDeliveryV1
+);
+router.get(
+  "/getAll",
+  authenticateToken,
+  GoodsDeliveryController.getAllGoodsDeliveries
+);
 
 router.put(
   "/:id",
   authenticateIsAdmin,
   GoodsDeliveryController.updateGoodsDelivery
-); // Cần authenticateToken
+);
 router.delete(
   "/:id",
   authenticateToken,
   GoodsDeliveryController.deleteGoodsDelivery
-); // Cần authenticateToken
+);
 
 module.exports = router;

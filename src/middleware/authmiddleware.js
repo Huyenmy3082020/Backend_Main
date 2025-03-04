@@ -5,28 +5,32 @@ dotenv.config();
 const authenticateIsAdmin = (req, res, next) => {
   try {
     const token = req.cookies.access_token;
-    console.log("token", token);
+    console.log("🔑 Token:", token);
+
     if (!token) {
       console.error("❌ Không có access_token trong cookie!");
       return res.status(401).json({ status: "err", mess: "Unauthorized" });
     }
 
-    // ✅ Giải mã token
     try {
       const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
-      console.log(JSON.stringify(decoded));
-      if (decoded.role === "admin") {
-        next();
+      console.log("📜 Decoded:", JSON.stringify(decoded));
+
+      if (decoded.role !== "admin") {
+        return res.status(403).json({
+          status: "err",
+          mess: "Bạn không có quyền truy cập! Hãy đăng nhập bằng tài khoản admin.",
+        });
       }
+
+      // Nếu là admin, cho phép tiếp tục request
+      next();
     } catch (error) {
-      res.status(401).json({
+      return res.status(401).json({
         success: false,
-        message: "Lỗi xác thực token", // Mô tả ngắn về lỗi
-        error: error.message, // Thông báo lỗi chi tiết
+        message: "Lỗi xác thực token",
+        error: error.message,
       });
-      return res
-        .status(403)
-        .json({ status: "err", mess: "Forbidden: " + error.message });
     }
   } catch (error) {
     return res.status(403).json({
@@ -44,7 +48,6 @@ const authenticateToken = (req, res, next) => {
       return res.status(401).json({ status: "err", mess: "Unauthorized" });
     }
 
-    // ✅ Giải mã token
     try {
       const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
       req.user = decoded;

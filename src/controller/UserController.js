@@ -165,7 +165,6 @@ const refreshTokenController = async (req, res) => {
   try {
     const refresh_token = req.cookies.refresh_token;
 
-    console.log("Refresh token", refresh_token);
     if (!refresh_token) {
       return res.status(400).json({
         status: "error",

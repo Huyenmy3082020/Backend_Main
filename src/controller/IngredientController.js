@@ -6,12 +6,11 @@ const { findSupplierByName } = require("./repository/supplierRepository");
 // 🟢 Thêm mới Ingredient
 exports.createIngredient = async (req, res) => {
   try {
-    const { category, supplier, unit, name, price, description } = req.body;
+    const { category, unit, name, price, description } = req.body;
 
     const categoryObj = await findCategoryByName(category);
-    const supplierObj = await findSupplierByName(supplier);
 
-    if (!categoryObj || !supplierObj) {
+    if (!categoryObj) {
       return res.status(400).json({
         success: false,
         message: "Không tìm thấy danh mục hoặc nhà cung cấp!",
@@ -19,11 +18,9 @@ exports.createIngredient = async (req, res) => {
     }
 
     const categoryId = categoryObj._id.toString();
-    const supplierId = supplierObj._id.toString();
 
     const newIngredient = await IngredientService.createIngredient({
       categoryId,
-      supplierId,
       name,
       price,
       unit,
@@ -47,18 +44,24 @@ exports.createIngredient = async (req, res) => {
 
 exports.createIngredientElastisearch = async (req, res) => {
   try {
-    const { category, unit, name, price, description } = req.body;
+    const {
+      categoryId,
+      name,
+      price,
+      unit,
+      description,
+      status,
+      supplierData,
+      totalStock,
+      statusList,
+    } = req.body;
 
-    const categoryObj = await findCategoryByName(category);
-
-    if (!categoryObj) {
+    if (!categoryId || !name || price == null || !unit) {
       return res.status(400).json({
         success: false,
-        message: "Không tìm thấy danh mục",
+        message: "Thiếu dữ liệu bắt buộc!",
       });
     }
-
-    const categoryId = categoryObj._id.toString();
 
     const newIngredient = await IngredientService.createIngredientElasticsearch(
       {
@@ -67,6 +70,10 @@ exports.createIngredientElastisearch = async (req, res) => {
         price,
         unit,
         description,
+        status: status,
+        supplierData: supplierData || [],
+        totalStock: totalStock ?? 0,
+        statusList: statusList || [],
       }
     );
 
@@ -85,7 +92,6 @@ exports.createIngredientElastisearch = async (req, res) => {
   }
 };
 
-// 🔵 Lấy danh sách tất cả Ingredients
 exports.getAllIngredients = async (req, res) => {
   try {
     const ingredients = await IngredientService.getAllIngredients();

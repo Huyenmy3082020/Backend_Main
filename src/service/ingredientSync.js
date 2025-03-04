@@ -1,11 +1,9 @@
-const mongoose = require("mongoose");
-const Ingredient = require("../models/IngredientsModel");
-const connectDB = require("../../config/mongodb/index");
+const axios = require("axios");
 const { esClient } = require("../../config/elasticsearch");
 
 const indexName = "ingredient";
 
-// 🔹 1. Tạo Index nếu chưa có
+// 🔹 Hàm tạo index nếu chưa tồn tại
 const createIndexIfNotExists = async () => {
   const exists = await esClient.indices.exists({ index: indexName });
 
@@ -16,111 +14,64 @@ const createIndexIfNotExists = async () => {
         mappings: {
           properties: {
             categoryId: { type: "keyword" },
-            supplierId: { type: "keyword" },
             name: { type: "text" },
             price: { type: "double" },
             unit: { type: "keyword" },
             description: { type: "text" },
-            updatedAt: { type: "date" },
-            status: { type: "boolean" },
-            isDeleted: { type: "boolean" },
+            statusList: { type: "keyword" },
+            totalStock: { type: "integer" },
           },
         },
       },
     });
-    console.log(`✅ Index '${indexName}' đã được tạo!`);
+    console.log(`✅ Đã tạo index: ${indexName}`);
+  } else {
+    console.log(`🔹 Index "${indexName}" đã tồn tại.`);
   }
 };
 
-// 🔹 2. Đồng bộ khi thêm sản phẩm
-const syncIngredientToElasticsearch = async (ingredient) => {
-  await esClient.index({
-    index: indexName,
-    id: ingredient._id.toString(),
-    body: {
-      categoryId: ingredient.categoryId?.toString(),
-      supplierId: ingredient.supplierId?.toString(),
-      name: ingredient.name,
-      price: ingredient.price,
-      unit: ingredient.unit,
-      description: ingredient.description,
-      updatedAt: ingredient.updatedAt,
-      status: ingredient.status,
-      isDeleted: ingredient.isDeleted,
-    },
-  });
-
-  console.log(`🚀 Đã đồng bộ nguyên liệu: ${ingredient.name}`);
-};
-
-// 🔹 3. Cập nhật sản phẩm
-const updateIngredientInElasticsearch = async (id, updatedData) => {
-  await esClient.update({
-    index: indexName,
-    id,
-    body: { doc: updatedData },
-  });
-
-  console.log(`🔄 Đã cập nhật nguyên liệu ${id} trong Elasticsearch`);
-};
-
-// 🔹 4. Xóa sản phẩm
-const deleteIngredientFromElasticsearch = async (id) => {
-  console.log("Id", id);
-  await esClient.delete({
-    index: indexName,
-    id,
-  });
-
-  console.log(`🗑️ Đã xóa nguyên liệu ${id} khỏi Elasticsearch`);
-};
-
-// 🔹 5. Đồng bộ tất cả dữ liệu từ MongoDB -> Elasticsearch
-const syncAllIngredients = async () => {
+// 🔹 Hàm đồng bộ dữ liệu từ API vào Elasticsearch
+const fetchAndSyncData = async () => {
   try {
-    const ingredients = await Ingredient.find({ isDeleted: false });
+    // Đảm bảo index tồn tại trước khi cập nhật dữ liệu
 
-    if (ingredients.length === 0) {
-      console.log("⚠️ Không có nguyên liệu nào để đồng bộ.");
+    // Gọi API để lấy dữ liệu
+    const response = await axios.get("http://localhost:2000/inventor");
+    console.log("📥 Dữ liệu từ API:", response.data);
+
+    // Xử lý dữ liệu
+    const products = response.data?.data || [];
+
+    if (!Array.isArray(products) || products.length === 0) {
+      console.log("⚠️ Không có sản phẩm nào để cập nhật.");
       return;
     }
 
-    const bulkOperations = ingredients.flatMap((ingredient) => [
-      { index: { _index: indexName, _id: ingredient._id.toString() } },
+    // Chuẩn bị dữ liệu để bulk insert/update vào Elasticsearch
+    const bulkOperations = products.flatMap((product) => [
+      { index: { _index: indexName, _id: product._id.toString() } },
       {
-        categoryId: ingredient.categoryId?.toString(),
-        supplierId: ingredient.supplierId?.toString(),
-        name: ingredient.name,
-        price: ingredient.price,
-        unit: ingredient.unit,
-        description: ingredient.description,
-        updatedAt: ingredient.updatedAt,
-        status: ingredient.status,
-        isDeleted: ingredient.isDeleted,
+        categoryId: product.categoryId?.toString(),
+        name: product.name,
+        price: product.price,
+        unit: product.unit,
+        description: product.description,
+        statusList:
+          Array.isArray(product.statusList) && product.statusList.length > 0
+            ? product.statusList[0] // Lấy trạng thái đầu tiên trong mảng
+            : "Không có dữ liệu",
+        totalStock: product.totalStock,
       },
     ]);
 
+    console.log("📦 Dữ liệu đẩy vào Elasticsearch:", bulkOperations);
+
+    // Gửi dữ liệu lên Elasticsearch
     await esClient.bulk({ body: bulkOperations });
-    console.log(
-      `✅ Đã đồng bộ ${ingredients.length} nguyên liệu vào Elasticsearch`
-    );
+
+    console.log(`✅ Đã cập nhật ${products.length} sản phẩm vào Elasticsearch`);
   } catch (error) {
-    console.error("❌ Lỗi khi đồng bộ dữ liệu:", error);
+    console.error("❌ Lỗi khi cập nhật dữ liệu từ API:", error.message);
   }
 };
-
-// 🛠 Chạy đồng bộ sau khi kết nối MongoDB
-const startSync = async () => {
-  await connectDB(); // Kết nối MongoDB
-  await syncAllIngredients(); // Đồng bộ toàn bộ dữ liệu
-};
-
-startSync();
-
-module.exports = {
-  createIndexIfNotExists,
-  syncIngredientToElasticsearch,
-  updateIngredientInElasticsearch,
-  deleteIngredientFromElasticsearch,
-  syncAllIngredients,
-};
+module.exports = { fetchAndSyncData, createIndexIfNotExists };
