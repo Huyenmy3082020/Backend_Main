@@ -6,7 +6,7 @@ const {
   deleteIngredientFromElasticsearch,
 } = require("./ingredientSync");
 
-const esClient = new Client({ node: "http://localhost:9200" });
+const esClient = new Client({ node: "http://elasticsearch:9200" });
 
 const searchIngredients = async (searchQuery) => {
   try {
