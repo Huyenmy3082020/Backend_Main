@@ -2,7 +2,6 @@ const express = require("express");
 const GoodsDeliveryController = require("../controller/GoodDeliveriesController");
 
 const {
-  authMiddleware,
   authenticateToken,
   authenticateIsAdmin,
 } = require("../middleware/authmiddleware");
