@@ -3,7 +3,7 @@ const amqp = require("amqplib");
 async function runProducer(data) {
   const queueName = "inventoryQueue";
   try {
-    const connection = await amqp.connect("amqp://localhost");
+    const connection = await amqp.connect("amqp://rabbitmq");
     const channel = await connection.createChannel();
     await channel.assertQueue(queueName, { durable: true });
 
