@@ -10,6 +10,6 @@ router.post(
   authenticateToken,
   GoodShipmentController.createGoodsShipmentRedis
 );
-router.get("/getAll", GoodShipmentController.getAllShipment);
+router.get("/getAll",authenticateToken,  GoodShipmentController.getAllShipment);
 
 module.exports = router;
