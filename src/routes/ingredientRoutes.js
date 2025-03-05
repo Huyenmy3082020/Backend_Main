@@ -7,10 +7,6 @@ const {
 } = require("../middleware/authmiddleware");
 
 router.post("/", authenticateIsAdmin, ingredientController.createIngredient);
-router.post(
-  "/elasticsearch",
-  ingredientController.createIngredientElastisearch
-);
 router.get("/", ingredientController.getAllIngredients);
 router.get("/search", ingredientController.searchIngredients);
 router.get("/:id", ingredientController.getIngredientById);

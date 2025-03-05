@@ -42,55 +42,6 @@ exports.createIngredient = async (req, res) => {
   }
 };
 
-exports.createIngredientElastisearch = async (req, res) => {
-  try {
-    const {
-      categoryId,
-      name,
-      price,
-      unit,
-      description,
-      status,
-      supplierData,
-      totalStock,
-      statusList,
-    } = req.body;
-
-    if (!categoryId || !name || price == null || !unit) {
-      return res.status(400).json({
-        success: false,
-        message: "Thiếu dữ liệu bắt buộc!",
-      });
-    }
-
-    const newIngredient = await IngredientService.createIngredientElasticsearch(
-      {
-        categoryId,
-        name,
-        price,
-        unit,
-        description,
-        status: status,
-        supplierData: supplierData || [],
-        totalStock: totalStock ?? 0,
-        statusList: statusList || [],
-      }
-    );
-
-    res.status(201).json({
-      success: true,
-      message: "Thêm thành công!",
-      ingredient: newIngredient,
-    });
-  } catch (error) {
-    console.error("Lỗi:", error);
-    res.status(500).json({
-      success: false,
-      message: "Lỗi khi thêm nguyên liệu!",
-      error: error.message,
-    });
-  }
-};
 
 exports.getAllIngredients = async (req, res) => {
   try {
