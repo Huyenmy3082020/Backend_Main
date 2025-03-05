@@ -8,13 +8,11 @@ const authenticateIsAdmin = (req, res, next) => {
     console.log("🔑 Token:", token);
 
     if (!token) {
-      console.error("❌ Không có access_token trong cookie!");
       return res.status(401).json({ status: "err", mess: "Unauthorized" });
     }
 
     try {
       const decoded = jwt.verify(token, process.env.ACCESS_TOKEN);
-      console.log("📜 Decoded:", JSON.stringify(decoded));
 
       if (decoded.role !== "admin") {
         return res.status(403).json({
@@ -23,7 +21,6 @@ const authenticateIsAdmin = (req, res, next) => {
         });
       }
 
-      // Nếu là admin, cho phép tiếp tục request
       next();
     } catch (error) {
       return res.status(401).json({
@@ -44,7 +41,6 @@ const authenticateToken = (req, res, next) => {
   try {
     const token = req.cookies.access_token;
     if (!token) {
-      console.error("❌ Không có access_token trong cookie!");
       return res.status(401).json({ status: "err", mess: "Unauthorized" });
     }
 

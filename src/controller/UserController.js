@@ -206,6 +206,12 @@ const logoutUser = async (req, res) => {
       sameSite: "strict",
       path: "/",
     });
+    res.clearCookie("access_token", {
+      httpOnly: true,
+      secure: false,
+      sameSite: "strict",
+      path: "/",
+    });
 
     return res.status(200).json({
       status: "OK",

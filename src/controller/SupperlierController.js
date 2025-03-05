@@ -32,7 +32,6 @@ exports.getAllSuppliers = async (req, res) => {
   }
 };
 
-// 🟡 Lấy 1 Supplier theo ID
 exports.getSupplierById = async (req, res) => {
   try {
     const supplier = await Supplier.findById(req.params.id);
