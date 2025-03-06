@@ -10,7 +10,7 @@ RUN npm install
 COPY . .
 
 # Mở port 3000 để container có thể giao tiếp với môi trường bên ngoài
-EXPOSE 3000
+EXPOSE 2000
 
 # Chạy server.js từ thư mục src
 CMD ["node", "src/index.js"]
