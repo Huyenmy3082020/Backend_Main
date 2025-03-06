@@ -14,8 +14,6 @@ app.use(bodyParser.json());
 app.use(cookieParser());
 const errorHandler = require("./middleware/errorHandler");
 const connectDB = require("../config/mongodb");
-const startRedisSync = require("./sync/syncdb");
-startRedisSync();
 app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
@@ -26,6 +24,12 @@ app.use(
     credentials: true,
   })
 );
+const { startSync } = require("./sync/syncdb");
+connectDB().then(() => {
+  console.log("✅ MongoDB đã kết nối!");
+
+  startSync();
+});
 
 app.use(errorHandler);
 routes(app);

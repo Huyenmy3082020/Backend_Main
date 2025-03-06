@@ -1,14 +1,64 @@
 const mongoose = require("mongoose");
-const { createClient } = require("redis");
-const Inventory = require("../models/InventoryModel"); // Import model Inventory
 const redisClient = require("../../config/redis");
+const Inventory = require("../models/InventoryModel");
+const connectDB = require("../../config/mongodb");
+
+async function syncMongoToRedis() {
+  try {
+    console.log("🔄 Bắt đầu đồng bộ từ MongoDB vào Redis...");
+
+    if (mongoose.connection.readyState !== 1) {
+      console.error("❌ MongoDB chưa kết nối! Hủy đồng bộ.");
+      return;
+    }
+
+    if (!redisClient) {
+      console.error("❌ Redis chưa kết nối! Hủy đồng bộ.");
+      return;
+    }
+
+    const inventories = await Inventory.find({ isDeleted: false });
+
+    if (!inventories.length) {
+      console.log("⚠️ Không có dữ liệu tồn kho trong MongoDB.");
+      return;
+    }
+
+    const pipeline = redisClient.pipeline();
+    for (const item of inventories) {
+      const key = `stock:product_${item.ingredientsId}`;
+      pipeline.set(key, item.stock);
+    }
+    await pipeline.exec();
+
+    console.log("✅ Hoàn thành đồng bộ MongoDB -> Redis!");
+  } catch (error) {
+    console.error("❌ Lỗi khi đồng bộ MongoDB -> Redis:", error);
+  }
+}
 
 async function syncRedisToMongo() {
   try {
-    console.log("🔄 Đang đồng bộ dữ liệu từ Redis vào MongoDB...");
+    console.log("🔄 Bắt đầu đồng bộ từ Redis vào MongoDB...");
+
+    if (mongoose.connection.readyState !== 1) {
+      console.error("❌ MongoDB chưa kết nối! Hủy đồng bộ.");
+      return;
+    }
+
+    if (!redisClient) {
+      console.error("❌ Redis chưa kết nối! Hủy đồng bộ.");
+      return;
+    }
 
     const keys = await redisClient.keys("stock:product_*");
 
+    if (!keys.length) {
+      console.log("⚠️ Không có dữ liệu tồn kho trong Redis.");
+      return;
+    }
+
+    const bulkOps = [];
     for (const key of keys) {
       const stockData = await redisClient.get(key);
       if (!stockData) continue;
@@ -16,55 +66,38 @@ async function syncRedisToMongo() {
       const ingredientsId = key.replace("stock:product_", "");
       const stock = parseInt(stockData, 10);
 
-      await Inventory.findOneAndUpdate(
-        { ingredientsId },
-        { stock },
-        { upsert: true }
+      bulkOps.push({
+        updateOne: {
+          filter: { ingredientsId },
+          update: { stock },
+          upsert: true,
+        },
+      });
+    }
+
+    if (bulkOps.length > 0) {
+      await Inventory.bulkWrite(bulkOps);
+      console.log(
+        `✅ Cập nhật ${bulkOps.length} sản phẩm từ Redis vào MongoDB`
       );
-
-      console.log(`✅ Cập nhật ${ingredientsId}: ${stock} vào MongoDB`);
+    } else {
+      console.log("⚠️ Không có dữ liệu cần cập nhật vào MongoDB.");
     }
 
-    console.log("✅ Hoàn thành đồng bộ từ Redis vào MongoDB!");
+    console.log("✅ Hoàn thành đồng bộ Redis -> MongoDB!");
   } catch (error) {
-    console.error("❌ Lỗi đồng bộ Redis -> MongoDB:", error);
+    console.error("❌ Lỗi khi đồng bộ Redis -> MongoDB:", error);
   }
 }
 
-async function syncMongoToRedis() {
-  try {
-    console.log("🔄 Đang đồng bộ dữ liệu từ MongoDB vào Redis...");
+// 🔁 Hàm chạy đồng bộ mỗi 2 phút
+async function startSync() {
+  await connectDB();
 
-    const inventories = await Inventory.find({ isDeleted: false });
+  setInterval(syncMongoToRedis, 120000); // 2 phút
+  setInterval(syncRedisToMongo, 120000); // 2 phút
 
-    for (const item of inventories) {
-      const key = `stock:product_${item.ingredientsId}`;
-      let existingStock = await redisClient.get(key);
-
-      if (existingStock === null) {
-        await redisClient.set(key, 0);
-        console.log(
-          `⚠️ Sản phẩm mới ${item.ingredientsId} chưa nhập hàng, đặt tồn kho = 0`
-        );
-      } else {
-        await redisClient.set(key, item.stock);
-        console.log(
-          `✅ Cập nhật ${item.ingredientsId}: ${item.stock} vào Redis`
-        );
-      }
-    }
-
-    console.log("✅ Hoàn thành đồng bộ từ MongoDB vào Redis!");
-  } catch (error) {
-    console.error("❌ Lỗi đồng bộ MongoDB -> Redis:", error);
-  }
+  console.log("🔁 Hệ thống đồng bộ MongoDB ↔ Redis đã bắt đầu!");
 }
 
-async function startRedisSync() {
-  console.log("✅ Redis connected!");
-
-  setInterval(syncRedisToMongo, 1500000);
-  setInterval(syncMongoToRedis, 150000);
-}
-
-module.exports = startRedisSync;
+module.exports = { syncMongoToRedis, syncRedisToMongo, startSync };
