@@ -17,19 +17,18 @@ async function syncMongoToRedis() {
       return;
     }
 
-    const inventories = await Inventory.find({ isDeleted: false });
+    const inventories = await Inventory.find();
 
     if (!inventories.length) {
       console.log("⚠️ Không có dữ liệu tồn kho trong MongoDB.");
       return;
     }
 
-    const pipeline = redisClient.pipeline();
+    // Loop through each inventory item and set the Redis key-value directly
     for (const item of inventories) {
       const key = `stock:product_${item.ingredientsId}`;
-      pipeline.set(key, item.stock);
+      await redisClient.set(key, item.stock); // Directly setting each key-value
     }
-    await pipeline.exec();
 
     console.log("✅ Hoàn thành đồng bộ MongoDB -> Redis!");
   } catch (error) {
@@ -58,7 +57,7 @@ async function syncRedisToMongo() {
       return;
     }
 
-    const bulkOps = [];
+    // Loop through each key, get the stock data and update MongoDB
     for (const key of keys) {
       const stockData = await redisClient.get(key);
       if (!stockData) continue;
@@ -66,22 +65,8 @@ async function syncRedisToMongo() {
       const ingredientsId = key.replace("stock:product_", "");
       const stock = parseInt(stockData, 10);
 
-      bulkOps.push({
-        updateOne: {
-          filter: { ingredientsId },
-          update: { stock },
-          upsert: true,
-        },
-      });
-    }
-
-    if (bulkOps.length > 0) {
-      await Inventory.bulkWrite(bulkOps);
-      console.log(
-        `✅ Cập nhật ${bulkOps.length} sản phẩm từ Redis vào MongoDB`
-      );
-    } else {
-      console.log("⚠️ Không có dữ liệu cần cập nhật vào MongoDB.");
+      // Update or insert the stock into MongoDB
+      await Inventory.updateOne({ ingredientsId }, { stock }, { upsert: true });
     }
 
     console.log("✅ Hoàn thành đồng bộ Redis -> MongoDB!");
@@ -90,12 +75,12 @@ async function syncRedisToMongo() {
   }
 }
 
-// 🔁 Hàm chạy đồng bộ mỗi 2 phút
 async function startSync() {
   await connectDB();
 
-  setInterval(syncMongoToRedis, 120000); // 2 phút
-  setInterval(syncRedisToMongo, 120000); // 2 phút
+  // Sync every 2 minutes (120000 ms)
+  setInterval(syncMongoToRedis, 120000);
+  setInterval(syncRedisToMongo, 120000);
 
   console.log("🔁 Hệ thống đồng bộ MongoDB ↔ Redis đã bắt đầu!");
 }
