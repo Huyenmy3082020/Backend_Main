@@ -77,11 +77,7 @@ async function syncRedisToMongo() {
 
 async function startSync() {
   await connectDB();
-
-  // Sync every 2 minutes (120000 ms)
-  setInterval(syncMongoToRedis, 120000);
-  setInterval(syncRedisToMongo, 120000);
-
+  syncRedisToMongo();
   console.log("🔁 Hệ thống đồng bộ MongoDB ↔ Redis đã bắt đầu!");
 }
 

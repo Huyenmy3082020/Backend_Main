@@ -6,6 +6,7 @@ const { runProducer } = require("../rabbitmq/producer");
 
 const axios = require("axios");
 const { sendToQueue } = require("../../config/rabbitmq");
+const { startSync } = require("../sync/syncdb");
 
 async function createGoodsShipment(data) {
   const session = await mongoose.startSession();
@@ -88,7 +89,7 @@ async function createGoodsShipment(data) {
     if (session.inTransaction()) {
       await session.commitTransaction();
     }
-
+    startSync();
     return goodsShipment;
   } catch (error) {
     await session.abortTransaction();
@@ -131,7 +132,7 @@ async function createGoodsShipmentRedis(data) {
 
     await sendToQueue("shipment_queue", newShipment);
     console.log("✅ Đơn hàng đã gửi vào hàng đợi:", newShipment);
-
+    startSync();
     return {
       message: "Đơn hàng đang được xử lý!",
       shipmentId: newShipment._id,
