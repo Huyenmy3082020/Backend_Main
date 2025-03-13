@@ -1,4 +1,5 @@
 const GoodsDeliveryService = require("../service/GoodsDeliveryService");
+const { startSyncV1, startSync } = require("../sync/syncdb");
 async function getAllGoodsDeliveries(req, res) {
   try {
     const goodsDeliveries = await GoodsDeliveryService.getAllGoodsDeliveries();
@@ -27,6 +28,7 @@ async function createGoodsDeliveryV1(req, res) {
     const goodsDelivery = await GoodsDeliveryService.createGoodsDeliveryV1(
       req.body
     );
+    startSyncV1();
     res
       .status(201)
       .json({ message: "GoodsDelivery created", data: goodsDelivery });
@@ -41,6 +43,7 @@ async function updateGoodsDelivery(req, res) {
       id,
       req.body
     );
+    startSync();
     res
       .status(200)
       .json({ message: "GoodsDelivery updated", data: goodsDelivery });

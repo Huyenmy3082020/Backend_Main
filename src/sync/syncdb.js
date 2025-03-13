@@ -77,8 +77,14 @@ async function syncRedisToMongo() {
 
 async function startSync() {
   await connectDB();
-  syncRedisToMongo();
+  syncMongoToRedis();
   console.log("🔁 Hệ thống đồng bộ MongoDB ↔ Redis đã bắt đầu!");
 }
 
-module.exports = { syncMongoToRedis, syncRedisToMongo, startSync };
+async function startSyncV1() {
+  await connectDB();
+  syncRedisToMongo();
+  console.log("🔁 Hệ thống đồng bộ Redis -> Mongo đã bắt đầu!");
+}
+
+module.exports = { syncMongoToRedis, syncRedisToMongo, startSync, startSyncV1 };

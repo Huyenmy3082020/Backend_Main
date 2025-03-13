@@ -5,10 +5,6 @@ const ingredientRoutes = require("../routes/ingredientRoutes");
 const GoodDeliveriesRouter = require("../routes/GoodDeliveryRouter");
 const ShipmentRouter = require("../routes/ShipmentRouter");
 const InventoryRouter = require("../routes/InventoryRouter");
-const {
-  authenticateToken,
-  authenticateIsAdmin,
-} = require("../middleware/authmiddleware");
 
 const routes = (app) => {
   app.use("/user", UserRouter);

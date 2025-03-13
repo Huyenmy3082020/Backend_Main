@@ -71,12 +71,6 @@ async function createGoodsDelivery(data) {
       throw new Error(`Đơn nhập hàng ${data._id} đã được xử lý trước đó!`);
     }
 
-    // Danh sách sản phẩm cần cập nhật kho
-    console.log(
-      "📊 Danh sách sản phẩm cần cập nhật kho:",
-      JSON.stringify(data.items, null, 2)
-    );
-
     await Promise.all(
       data.items.map(async (item) => {
         if (!item.ingredientsId || item.quantity <= 0) {
@@ -231,7 +225,7 @@ async function updateGoodsDelivery(id, data) {
     for (const item of existingGoodsDelivery.items) {
       await Inventory.findOneAndUpdate(
         { ingredientsId: item.ingredientsId },
-        { $inc: { stock: -item.quantity } },
+        { $inc: { stock: +item.quantity } },
         { upsert: true, new: true, session }
       );
     }

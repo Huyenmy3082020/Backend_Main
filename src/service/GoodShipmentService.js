@@ -8,7 +8,7 @@ const axios = require("axios");
 const { sendToQueue } = require("../../config/rabbitmq");
 const { startSync } = require("../sync/syncdb");
 
-async function createGoodsShipment(data) {
+async function createGoodsShipmentRedis(data) {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
@@ -62,12 +62,12 @@ async function createGoodsShipment(data) {
         ingredientsId: item.ingredientsId,
         ingredientNameAtPurchase: ingredient.name,
         quantity: item.quantity,
-        priceAtShipment: ingredient.price,
+        priceAtPurchase: ingredient.price,
       });
     }
 
     const totalPrice = updatedItems.reduce(
-      (sum, item) => sum + item.quantity * item.priceAtShipment,
+      (sum, item) => sum + item.quantity * item.priceAtPurchase,
       0
     );
 
@@ -99,7 +99,7 @@ async function createGoodsShipment(data) {
   }
 }
 
-async function createGoodsShipmentRedis(data) {
+async function createGoodsShipment(data) {
   try {
     let { userId, items, deliveryAddress } = data;
 
@@ -114,13 +114,13 @@ async function createGoodsShipmentRedis(data) {
 
       if (!inventory) {
         throw new Error(
-          `❌ Nguyên liệu với ID ${item.ingredientsId} không tồn tại trong kho`
+          ` Nguyên liệu với ID ${item.ingredientsId} không tồn tại trong kho`
         );
       }
 
       if (item.quantity > inventory.stock) {
         throw new Error(
-          `❌ Số lượng đặt (${item.quantity}) lớn hơn số lượng tồn kho (${inventory.stock}) `
+          ` Số lượng đặt (${item.quantity}) lớn hơn số lượng tồn kho (${inventory.stock}) `
         );
       }
     }
@@ -128,17 +128,14 @@ async function createGoodsShipmentRedis(data) {
     const newShipment = new GoodsShipment(data);
     await newShipment.save();
 
-    console.log("✅ Đơn hàng đã lưu vào database:", newShipment);
-
     await sendToQueue("shipment_queue", newShipment);
-    console.log("✅ Đơn hàng đã gửi vào hàng đợi:", newShipment);
     startSync();
     return {
       message: "Đơn hàng đang được xử lý!",
       shipmentId: newShipment._id,
     };
   } catch (error) {
-    console.error("❌ Lỗi khi tạo đơn hàng:", error.message);
+    console.error("Lỗi khi tạo đơn hàng:", error.message);
     throw error;
   }
 }
