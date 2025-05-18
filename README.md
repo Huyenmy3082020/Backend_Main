@@ -46,7 +46,6 @@ npm install
 -	Unit test cho chức năng tạo đơn xuất hàng
 ![image](https://github.com/user-attachments/assets/07730f25-4462-4b48-ac75-5baf5f0d4e79)
 -	Unit Test cho chức năng tạo đơn nhập hàng
-![Uploading image.png…]()
 
 
 # Chạy ứng dụng ở môi trường phát triển
